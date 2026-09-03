@@ -1,0 +1,16 @@
+[generator]
+command = ["codex", "exec", "--skip-git-repo-check", "--ephemeral", "--sandbox", "read-only", "--color", "never", "-"]
+timeout_seconds = 300
+
+[git]
+auto_push = false
+remote = "origin"
+
+[notifications]
+sound = true
+sound_id = "message-new-instant"
+
+[recall]
+limit = 10
+min_score = 1.0
+path_boost = 2.0

@@ -1,0 +1,47 @@
+[project]
+name = "notes"
+version = "0.1.0"
+description = "Local personal knowledge system: Markdown notes, SQLite index, schedules, and Claude Code integration"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Mikhail Butvin", email = "butvin.mikhail@gmail.com" }]
+dependencies = [
+  "click>=8.1",
+  "ruamel.yaml>=0.18",
+  "pymorphy3>=2.0",
+  "pymorphy3-dicts-ru>=2.4",
+]
+
+[project.scripts]
+notes = "notes.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "ruff>=0.5",
+  "ty>=0.0.65",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.8,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# tests/unit and tests/cli may share module basenames (test_search.py in both); importlib mode keeps them apart without __init__.py files.
+addopts = ["--import-mode=importlib"]
+
+[tool.coverage.run]
+source = ["src/notes"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]

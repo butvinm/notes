@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace-manifest.json",
+  "name": "notes",
+  "owner": {
+    "name": "Mikhail Butvin",
+    "url": "https://github.com/butvinm"
+  },
+  "description": "The notes plugin: a local Markdown knowledge base wired into Claude Code, with automatic recall on every prompt and skills that capture decisions, facts, promises, events, and reminders.",
+  "plugins": [
+    {
+      "name": "notes",
+      "source": "./plugin",
+      "description": "Surfaces unread reminders and relevant notes from your ~/.notes vault on every prompt, and adds skills that capture decisions, facts, events, promises, and reminders as drafts you confirm before they are saved. Requires the `notes` CLI from this repository and an initialized vault.",
+      "keywords": ["notes", "knowledge-base", "markdown", "reminders", "recall", "hook", "memory"]
+    }
+  ]
+}

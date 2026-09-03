@@ -1,0 +1,5 @@
+index.sqlite
+index.sqlite-wal
+index.sqlite-shm
+drafts/
+embeddings/

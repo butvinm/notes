@@ -1,0 +1,4 @@
+# Kind templates carry `{title}` and `{schedule}` placeholders that a YAML formatter rewrites as a flow mapping.
+src/notes/defaults/types/*/template.md
+# Test fixtures are byte-exact input for the parser and the round-trip rewriter.
+tests/fixtures/
