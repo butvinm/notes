@@ -1,70 +1,94 @@
 # notes
 
-`notes` is a local-first knowledge base for decisions, facts, ideas, commitments, events, and reminders. Notes stay as ordinary Markdown files, Git keeps their history, and a disposable SQLite index makes them searchable from the command line or Claude Code.
+`notes` is a local, Git-backed memory for Claude Code and Codex. Ask your agent to remember something once, then recall it in a later conversation.
 
-## Features
+## Try it in one minute
 
-- Plain Markdown is the source of truth. The SQLite search index can always be rebuilt.
-- Fast full-text search with exact tag and issue matching, English stemming, and Russian lemmatization.
-- One-shot and recurring reminders delivered through desktop notifications.
-- Automatic Git commits, with optional push to a private remote.
-- Optional AI-assisted drafting with an explicit review step before anything is saved.
-- A Claude Code plugin that recalls relevant notes and provides capture, decision, reminder, and recall skills.
+### Install
 
-Everything except AI-assisted drafting works offline.
+Requirements: Python 3.12 or newer, `uv`, and `Git`. Desktop notifications additionally require Linux with `systemd`, `notify-send`, and optionally `canberra-gtk-play`. The agent hook requires `jq`.
 
-## Requirements
-
-- Python 3.12 or newer
-- uv
-- Git
-
-Desktop notifications additionally require Linux with `systemd`, `notify-send`, and optionally `canberra-gtk-play`. The Claude Code hook requires `jq`.
-
-## Installation
+Install the latest version directly from GitHub and initialize your vault:
 
 ```shell
-git clone https://github.com/butvinm/notes.git
-cd notes
-uv tool install .
-notes --version
-```
-
-After upgrading the repository, run `uv tool install --reinstall .`.
-
-## Quick start
-
-Create a vault:
-
-```shell
+uv tool install git+https://github.com/butvinm/notes
 notes init
 ```
 
-`notes init` uses `~/.notes/`. In an interactive terminal it can also configure a private Git remote and desktop notifications. The same options are available non-interactively:
+For a local checkout or development install, use `uv tool install .`; after upgrading it, run `uv tool install --reinstall .`. The default vault is `~/.notes/`.
 
-```shell
-notes init --remote <git-url> --auto-push --enable-notifications
+Install the plugin for the agent you use.
+
+Claude Code:
+
+```text
+/plugin marketplace add butvinm/notes
+/plugin install notes@notes
 ```
 
-Create and find a note:
+Codex:
 
-```shell
-notes new decision "Use PostgreSQL for the event log"
-notes search "event storage"
-notes list --kind decision
+```text
+codex plugin marketplace add butvinm/notes
+codex plugin add notes@notes
 ```
 
-Create a reminder and enable delivery:
+To try a local checkout without installing the plugin, use `claude --plugin-dir ./plugin`.
+
+### Ask your agent
+
+You:
+
+> Remind me to publish the release tomorrow.
+
+The plugin recognizes the reminder request, drafts a note, and asks for confirmation:
+
+```text
+Save this reminder for tomorrow at 09:00?
+
+1. Save
+2. Revise
+3. Cancel
+```
+
+Choose `Save`, and the note is written to Markdown, indexed for search, committed to Git, and delivered as a desktop notification tomorrow.
+
+The same flow works for decisions, facts, promises, events, and ideas. Nothing is saved without your confirmation.
+
+## Agent integration
+
+The plugin connects the agent to the vault in two directions: it recalls existing notes and provides skills for creating new ones.
+
+Before each user prompt, the hook runs `notes recall` with the prompt and current working directory. It injects a small context block containing unread reminders and the most relevant note titles, paths, and match reasons. It does not inject full note bodies. If the CLI, `jq`, or an initialized vault is unavailable, it injects nothing.
+
+Use `/notes:recall` when the automatic context is not enough. The recall skill searches by issue ID, tag, project, or text, then reads the notes needed to answer. Use `/notes:capture`, `/notes:decision`, and `/notes:reminder` to create notes from the current conversation.
+
+## Command-line interface
+
+The plugin uses the `notes` command-line interface. Use it directly for scripts, inspection, and automation. Every command supports `--json` for machine-readable output.
 
 ```shell
-notes new reminder "Review backup restore procedure"
-notes notifications enable
-notes notifications status
+notes --help
+notes <command> --help
+```
+
+The sections below cover the main CLI workflows.
+
+## Create and save notes
+
+Create a note directly with `notes new`, revise it with `notes edit`, and organize existing notes with `notes move` and `notes relate`.
+
+Notes can also be drafted with the configured generator. `notes prompt` shows the context expected for a kind; `notes draft create <kind>` creates a draft from JSON input, `notes draft show` displays it, and `notes draft revise` sends feedback for another generation. Nothing is indexed or committed until `notes draft save` validates and saves it. Use `notes draft list` to find drafts and `notes draft discard` to remove one without saving it.
+
+The generator receives a prompt on standard input and returns JSON with a short name and Markdown:
+
+```json
+{"short_name": "postgresql-event-log", "markdown": "---\nkind: decision\n..."}
 ```
 
 ## Note format
 
-A note ID is its path relative to the vault. Files use the name `notes/YYYY-MM-DD-<slug>.md`; the first H1 is the title.
+A note ID is its path relative to the vault. Files use `notes/YYYY-MM-DD-<slug>.md`; the first H1 is the title.
 
 ```markdown
 ---
@@ -87,11 +111,17 @@ related:
 **Rationale:** It provides transactional writes, retention controls, and familiar recovery tooling.
 ```
 
-`kind` and `status` are required. The built-in kinds are `decision`, `fact`, `promise`, `event`, `reminder`, and `idea`. A `promise` or `reminder` also requires a `schedule`. Unknown frontmatter keys are preserved, so the format can be extended without changing the CLI.
+`kind` and `status` are required. The built-in kinds are `decision`, `fact`, `promise`, `event`, `reminder`, and `idea`. A `promise` or `reminder` also requires a `schedule`. Unknown frontmatter keys are preserved.
 
 Relations can be `supersedes`, `child`, or `related`. Superseded notes remain unchanged on disk but are hidden from normal search unless an exact tag or issue ID matches.
 
-## Schedules and reminders
+## Find and use notes
+
+Use `notes show <id>` to read one note, `notes list` to browse notes, and `notes search <query>` to search titles, tags, keywords, and bodies. Exact tags and tracker issue IDs rank above text matches. Archived and superseded notes are excluded by default; add `--all` to include them.
+
+`notes recall [<query>]` produces a small context block for tools and agents. It lists unread reminders first, then exact matches, then the strongest text matches. It emits titles, paths, and match reasons, never note bodies.
+
+## Reminders
 
 Schedules are stored in one of two canonical forms:
 
@@ -102,54 +132,15 @@ schedule: every 3 days from 2026-09-02T10:00:00+03:00
 
 Interactive commands and draft saving also accept `in 3 days`, `in a week`, `tomorrow`, `tomorrow 09:30`, `today 18:00`, `2026-10-01`, `2026-10-01 10:00`, and `every 2 weeks`. Dates without a time use 09:00 in the local time zone.
 
-`notes notifications enable` installs `notes-tick.timer`, which runs `notes tick` every minute. Each occurrence is delivered once and stays unread until `notes read <id>`. Delivery and read state live only in `index.sqlite`; deleting the index loses that state but not the notes.
-
-## Commands
-
-All commands support `--json` for machine-readable output.
-
-- Vault: `notes init`, `notes sync`, `notes check`, `notes push`, `notes pull`
-- Create and organize: `notes new`, `notes edit`, `notes relate`, `notes move`
-- Read and search: `notes show`, `notes list`, `notes search`, `notes recall`
-- Reminders: `notes tick`, `notes read`, `notes notifications enable`, `notes notifications disable`, `notes notifications status`
-- Drafting: `notes prompt`, `notes draft create`, `notes draft list`, `notes draft show`, `notes draft revise`, `notes draft save`, `notes draft discard`
-
-Run `notes <command> --help` for options and examples.
-
-## Search and recall
-
-`notes search <query>` searches titles, tags, keywords, and bodies. Exact tags and tracker issue IDs rank above text matches. Archived and superseded notes are excluded by default; add `--all` to include them.
-
-`notes recall [<query>]` produces a small context block for tools and agents. It lists unread reminders first, then exact matches, then the strongest text matches. It emits titles, paths, and match reasons, never note bodies.
+`notes notifications enable` installs `notes-tick.timer`, which runs `notes tick` every minute. Each occurrence is delivered once and stays unread until `notes read <id>`. Check or change notification setup with `notes notifications status` and `notes notifications disable`.
 
 ## Sync and backup
 
-Each vault command indexes changed Markdown and commits valid changes to the vault's Git repository. Invalid notes stay out of the index and Git until corrected; `notes check` reports each problem with its line number.
+Notes are stored as ordinary Markdown files. A derived SQLite index makes them fast to search and can always be rebuilt. The `deliveries` table is the exception: it stores device-local reminder delivery and read state.
 
-Enable `git.auto_push` during initialization or in `config.toml` to push commits automatically. Auto-push failures are warnings and are retried later. `notes recall`, `notes tick`, and `notes read` never access the network.
+Vault commands sync changed Markdown and commit valid changes to Git. Use `notes sync` to repair or refresh the index, and `notes check` to see validation problems with line numbers. Use `notes push` and `notes pull` for explicit remote synchronization. Auto-push is controlled by `git.auto_push`; failures are warnings and are retried later. `notes recall`, `notes tick`, and `notes read` never access the network.
 
-To use an existing vault on another device or restore one from a remote:
-
-```shell
-notes init --remote <git-url>
-```
-
-The command inspects the remote before creating anything and clones it when it contains a vault. Delivery history is device-local and is not restored.
-
-## AI-assisted drafting
-
-Drafting is optional and provider-independent. `notes draft create <kind>` accepts a JSON context object on standard input, invokes the configured generator, and stores the result outside the index. Review it with `notes draft show`, refine it with `notes draft revise`, then use `notes draft save` or `notes draft discard`.
-
-The generator receives a prompt on standard input and must return a JSON object:
-
-```json
-{
-  "short_name": "postgresql-event-log",
-  "markdown": "---\nkind: decision\n..."
-}
-```
-
-No generated note becomes searchable, committed, or eligible for reminders until it is saved.
+To use an existing vault on another device or restore one from a remote, run `notes init --remote <git-url>`. The command inspects the remote before creating anything and clones it when it contains a vault. Delivery history is device-local and is not restored.
 
 ## Configuration
 
@@ -172,25 +163,6 @@ sound_id = "message-new-instant"
 limit = 10
 min_score = 1.0
 path_boost = 2.0
-```
-
-## Claude Code plugin
-
-The plugin in `plugin/` adds a prompt hook for automatic recall and the `/notes:capture`, `/notes:decision`, `/notes:reminder`, and `/notes:recall` skills. The hook does nothing when the CLI, vault, or `jq` is unavailable.
-
-This repository is also the plugin marketplace. Add it once, then install the plugin, both from inside Claude Code:
-
-```
-/plugin marketplace add butvinm/notes
-/plugin install notes@notes
-```
-
-A local checkout works the same way: `/plugin marketplace add <path-to-repository>`.
-
-The `notes` executable must be installed and the vault initialized; see [Installation](#installation) above. To try the plugin from a checkout without installing it:
-
-```shell
-claude --plugin-dir ./plugin
 ```
 
 ## Development
