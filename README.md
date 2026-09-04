@@ -63,6 +63,8 @@ Before each user prompt, the hook runs `notes recall` with the prompt and curren
 
 Use `/notes:recall` when the automatic context is not enough. The recall skill searches by issue ID, tag, project, or text, then reads the notes needed to answer. Use `/notes:fact`, `/notes:idea`, `/notes:decision`, and `/notes:reminder` to create notes from the current conversation, one skill per kind, and `/notes:note` for a kind you added yourself.
 
+For Claude Code, consider pairing this plugin with the [`skill-reminder` hook](https://github.com/butvinm/cc-toys#skill-reminder-hook). It reminds the agent to activate relevant skills before each prompt, making it more reliable at loading and using the notes skills.
+
 ## Command-line interface
 
 The plugin uses the `notes` command-line interface. Use it directly for scripts, inspection, and automation. Every command supports `--json` for machine-readable output.
