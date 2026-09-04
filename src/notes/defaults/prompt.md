@@ -17,6 +17,7 @@ In this order: these shared instructions, the instructions for the note's kind, 
 - `schedule`: only for kinds that require it or when the packet asks for one. Write the canonical form: `at 2026-09-09T10:00:00+03:00` for a single moment, `every 3 days from 2026-09-02T10:00:00+03:00` for a recurring one; timestamps carry seconds and a UTC offset. When the packet gives the schedule in a relative form the CLI accepts (`in 3 days`, `tomorrow 09:00`, `today 18:00`, `2026-10-01 10:00`, `every 2 weeks`), copy it exactly as given; the CLI converts it when the note is saved. Never compute a date yourself.
 - `related`: leave it out; the developer links notes with `notes relate`.
 - Write the body in the language the packet is written in. Be precise and compact: someone returning in six months must understand the note without the conversation that produced it.
+- Use plain punctuation everywhere in the note, title and frontmatter included. No em dash and no en dash: where a dash separates a clause, write a hyphen with a space on each side; in a range, write a plain hyphen. No curly quotes or curly apostrophes, no ellipsis character (write three periods), no arrow characters (write `->` and `<-`), no non-breaking space. Substitute the character and leave the sentence as it is; do not repunctuate around it.
 - `short_name`: five to seven words that identify the note in a filename, in the language of the title; punctuation is not needed.
 
 ## Output

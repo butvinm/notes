@@ -169,6 +169,13 @@ def test_every_kind_ships_a_prompt_that_names_its_sections() -> None:
             assert section in prompt
 
 
+def test_shared_prompt_names_every_glyph_the_generator_must_avoid() -> None:
+    prompt = defaults_io.packaged_text("prompt.md")
+
+    for glyph in ("em dash", "en dash", "curly quotes", "ellipsis character", "arrow characters", "non-breaking space"):
+        assert glyph in prompt, glyph
+
+
 def test_shared_prompt_states_the_envelope_and_the_follow_up_rules() -> None:
     prompt = defaults_io.packaged_text("prompt.md")
 
