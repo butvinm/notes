@@ -247,7 +247,7 @@ def test_create_rejects_an_unknown_kind_before_reading_stdin(
     assert result.exit_code == 1
     assert error_json(result) == {
         "type": "usage_error",
-        "message": "unknown kind `recipe` (known kinds: decision, event, fact, idea, promise, reminder)",
+        "message": "unknown kind `recipe` (known kinds: decision, fact, idea, reminder)",
     }
     assert fake_generator.prompts == []
     assert draft_ids(vault) == []

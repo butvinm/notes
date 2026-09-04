@@ -13,7 +13,7 @@ from notes.document import Document, Heading, Relation, ValidationError
 from notes.errors import ValidationFailed
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures" / "notes"
-KINDS = ("decision", "event", "fact", "idea", "promise", "reminder")
+KINDS = ("decision", "fact", "idea", "reminder")
 KAFKA = "2026-09-02-project-atlas-kafka-task-updates.md"
 WEBSOCKET = "2026-08-27-project-atlas-websocket.md"
 CYRILLIC = "2026-09-01-обновления-задач-через-kafka.md"
@@ -247,7 +247,7 @@ def test_unknown_kind_lists_the_known_kinds(vault: Path) -> None:
     doc = install(vault, "", as_name="2026-09-02-memo.md", text=note_text("kind: memo\nstatus: active"))
 
     assert document.validate(doc, KINDS, vault) == [
-        ValidationError(2, "unknown kind `memo` (known kinds: decision, event, fact, idea, promise, reminder)")
+        ValidationError(2, "unknown kind `memo` (known kinds: decision, fact, idea, reminder)")
     ]
     assert document.validate(doc, [], vault)[0].message.endswith("(known kinds: none installed under types/)")
 
@@ -282,10 +282,10 @@ def test_null_list_fields_count_as_empty(vault: Path) -> None:
 
 def test_reminder_requires_a_schedule(vault: Path) -> None:
     without = install(vault, "", as_name="2026-09-02-r1.md", text=note_text("kind: reminder\nstatus: active"))
-    null = install(vault, "", as_name="2026-09-02-r2.md", text=note_text("kind: promise\nstatus: active\nschedule:"))
+    null = install(vault, "", as_name="2026-09-02-r2.md", text=note_text("kind: reminder\nstatus: active\nschedule:"))
 
     assert document.validate(without, KINDS, vault) == [ValidationError(1, "schedule is required for a reminder")]
-    assert document.validate(null, KINDS, vault) == [ValidationError(4, "schedule is required for a promise")]
+    assert document.validate(null, KINDS, vault) == [ValidationError(4, "schedule is required for a reminder")]
 
 
 def test_schedule_must_be_a_non_empty_string(vault: Path) -> None:
@@ -318,18 +318,6 @@ def test_schedule_must_follow_the_grammar(vault: Path, value: str, expected: str
     [error] = document.validate(doc, KINDS, vault)
     assert error.line == 4
     assert error.message.startswith(expected)
-
-
-def test_promise_requires_a_one_shot_schedule(vault: Path) -> None:
-    recurring = "kind: promise\nstatus: active\nschedule: every 3 days from 2026-09-02T10:00:00+03:00"
-    one_shot = "kind: promise\nstatus: active\nschedule: at 2026-09-09T10:00:00+03:00"
-    recurring_doc = install(vault, "", as_name="2026-09-02-p1.md", text=note_text(recurring))
-    one_shot_doc = install(vault, "", as_name="2026-09-02-p2.md", text=note_text(one_shot))
-
-    assert document.validate(recurring_doc, KINDS, vault) == [
-        ValidationError(4, "a promise needs a one-shot `at <timestamp>` schedule, its due date")
-    ]
-    assert messages(vault, one_shot_doc) == []
 
 
 def test_reminder_accepts_both_schedule_forms(vault: Path) -> None:
@@ -664,18 +652,16 @@ def test_normalize_schedule_without_a_schedule_or_a_frontmatter_changes_nothing(
 
 
 @pytest.mark.parametrize(
-    ("kind", "text", "expected"),
+    ("text", "expected"),
     [
-        ("decision", "at 2026-09-09T10:00:00+03:00", None),
-        ("reminder", "every 3 days from 2026-09-02T10:00:00+03:00", None),
-        ("promise", "at 2026-09-09T10:00:00+03:00", None),
-        ("promise", "every 3 days from 2026-09-02T10:00:00+03:00", "a promise needs a one-shot `at <timestamp>`"),
-        ("fact", "soon", "schedule: `soon` is not a schedule"),
-        (None, "at 2026-09-09T10:00:00", "schedule: timestamp `2026-09-09T10:00:00` needs a UTC offset"),
+        ("at 2026-09-09T10:00:00+03:00", None),
+        ("every 3 days from 2026-09-02T10:00:00+03:00", None),
+        ("soon", "schedule: `soon` is not a schedule"),
+        ("at 2026-09-09T10:00:00", "schedule: timestamp `2026-09-09T10:00:00` needs a UTC offset"),
     ],
 )
-def test_schedule_problem(kind: str | None, text: str, expected: str | None) -> None:
-    problem = document.schedule_problem(kind, text)
+def test_schedule_problem(text: str, expected: str | None) -> None:
+    problem = document.schedule_problem(text)
 
     if expected is None:
         assert problem is None

@@ -1,6 +1,6 @@
 ---
 name: capture
-description: Capture what this session established as a note in the personal vault at ~/.notes - a fact, an event, a promise, or an idea, the kind chosen from the content - drafted by the notes CLI and saved only after the user confirms. Invoke on "save this", "remember this", "note this down", "capture that", "keep this for later", or when the user states a fact, an outcome, a commitment, or an idea worth keeping beyond the session.
+description: Capture a fact or an idea from this session as a note in the personal vault at ~/.notes, drafted by the notes CLI and saved only after the user confirms. Invoke on "save this", "remember this", "note this down", "capture that", "keep this for later", or when the user states something true, reports what happened, or floats a possibility worth keeping beyond the session.
 ---
 
 # Capture
@@ -10,13 +10,11 @@ Turn what the session established into one note in the vault at `~/.notes`, thro
 ## Procedure
 
 1. **Pick the kind** from the content, not from the wording of the request:
-   - `fact`: something true about a system, a process, or a preference, with a source; the default for a statement
-   - `event`: something that happened, with a date; the default for an outcome or an incident
-   - `promise`: a commitment with a due date, owed by or to the user
+   - `fact`: something that is the case - true about a system, a process, or a preference, or something that happened - with a source; the default
    - `idea`: a possibility that is neither decided nor scheduled
-   - a choice between alternatives belongs to `/notes:decision`; a request to be told something later belongs to `/notes:reminder`
+   - a choice between alternatives belongs to `/notes:decision`; anything that must surface at a future moment, including a commitment owed to someone, belongs to `/notes:reminder`
 2. **Extract from the session**, never the transcript: the facts in the user's words (what, who, when, where it came from), the project directories (`~/Dev/<project>`, with `~` kept as text), references (files, URLs, tracker issues), tags (the project, an issue ID such as `ATLAS-27`, the vault's existing spellings), and keywords (synonyms, abbreviations, alternative names).
-3. **Ask one targeted clarification question only if critical context is missing**: a fact without a source, an event without a date, a promise without a due date or an owner. Otherwise do not ask.
+3. **Ask one targeted clarification question only if critical context is missing**: a fact without a source, something that happened without a date. Otherwise do not ask.
 4. Run `notes prompt <kind>` and shape the packet to what the kind expects.
 5. Write the packet (below) to a temporary file with the Write tool, then run `notes draft create <kind> --json < <packet file>` in the background and continue the conversation; the generator can take a minute or more. The JSON names the draft `id`, `short_name`, and `abs_path`; a failure stores nothing.
 6. Read the draft with `notes draft show <draft-id>` and show it to the user through `AskUserQuestion` with three options: **save**, **revise** (free-form feedback), **cancel**.
@@ -43,13 +41,12 @@ A JSON object with what the kind's prompt asks for. Conventional keys, all optio
   "tags": ["exampleco", "kafka", "ATLAS-31"],
   "keywords": ["retention", "topic TTL", "log.retention.hours"],
   "references": ["~/Dev/exampleco/infra/kafka/server.properties", "ATLAS-31"],
-  "schedule": "2026-10-01 10:00",
   "cwd": "/home/user/Dev/exampleco",
   "language": "en"
 }
 ```
 
-Leave out what the session did not establish; the generator uses only the packet and never invents. `schedule` is for a promise only (its due moment) and may be relative (`in 3 days`, `tomorrow 09:00`, `2026-10-01 10:00`); `notes draft save` converts it to the canonical form.
+Leave out what the session did not establish; the generator uses only the packet and never invents. Neither kind carries a `schedule`: a note that must surface at a future moment is a reminder, so use `/notes:reminder` instead.
 
 ## When something fails
 

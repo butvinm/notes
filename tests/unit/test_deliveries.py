@@ -93,7 +93,7 @@ def test_due_notes_lists_active_scheduled_notes_whose_latest_occurrence_is_undel
 ) -> None:
     insert_note(conn, PLANTS, schedule="at 2026-09-09T10:00:00+03:00", title="Water the plants")
     insert_note(conn, STANDUP, schedule=EVERY_3_DAYS, title="Standup")
-    insert_note(conn, LIPS, kind="promise", schedule="at 2026-09-15T18:00:00+03:00")
+    insert_note(conn, LIPS, kind="reminder", schedule="at 2026-09-15T18:00:00+03:00")
     insert_note(conn, IDEA, kind="idea")
     insert_note(conn, LEGACY, status="archived", schedule="at 2026-08-30T10:00:00+03:00")
     insert_note(conn, OLD, schedule="at 2026-09-01T10:00:00+03:00")
@@ -217,7 +217,7 @@ def test_tick_records_notifies_and_plays_the_sound_once_per_due_note(
 ) -> None:
     insert_note(conn, PLANTS, schedule="at 2026-09-09T10:00:00+03:00", title="Water the plants")
     insert_note(conn, STANDUP, schedule=EVERY_3_DAYS, title="Standup")
-    insert_note(conn, LIPS, kind="promise", schedule="at 2026-09-15T18:00:00+03:00")
+    insert_note(conn, LIPS, kind="reminder", schedule="at 2026-09-15T18:00:00+03:00")
 
     delivered = deliveries.tick(conn, NotificationsConfig(), NOW)
 

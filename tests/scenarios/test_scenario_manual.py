@@ -63,11 +63,13 @@ tags: [team]
 
 # Standup moved to 10:30
 
-**What happened:** The daily standup moved from 10:00 to 10:30.
-"""
-"""An event without its `kind`: invalid until the line is added by hand."""
+**Fact:** The daily standup moved from 10:00 to 10:30.
 
-FIXED_TEXT = BROKEN_TEXT.replace("---\nstatus: active\n", "---\nkind: event\nstatus: active\n", 1)
+**Source:** The team channel, 2026-07-01.
+"""
+"""A note without its `kind`: invalid until the line is added by hand."""
+
+FIXED_TEXT = BROKEN_TEXT.replace("---\nstatus: active\n", "---\nkind: fact\nstatus: active\n", 1)
 
 
 def write(vault: Path, path: str, text: str) -> None:
@@ -158,7 +160,7 @@ def test_an_invalid_file_stays_out_of_the_index_and_out_of_git_until_it_is_fixed
     searched_again = runner.invoke(cli, ["search", "standup"])
 
     assert listed_again.stdout.splitlines() == [
-        line(vault, "event", "active", STANDUP, STANDUP_TITLE),
+        line(vault, "fact", "active", STANDUP, STANDUP_TITLE),
         line(vault, "decision", "active", KAFKA, KAFKA_TITLE),
     ]
     assert checked_again.output == "ok: 2 notes indexed, no invalid files\n"

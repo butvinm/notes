@@ -9,7 +9,7 @@ from click.testing import CliRunner
 from notes.cli import cli
 from tests.conftest import indexed_paths
 
-KNOWN = "decision, event, fact, idea, promise, reminder"
+KNOWN = "decision, fact, idea, reminder"
 NO_VAULT = "no vault at ~/.notes, run `notes init`"
 RECIPE_TEMPLATE = "---\nkind: recipe\nstatus: active\n---\n\n# {title}\n"
 

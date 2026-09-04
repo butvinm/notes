@@ -39,12 +39,12 @@ def test_compose_skips_empty_prompts() -> None:
 
 
 def test_load_parts_reads_the_vault_files(vault: Path) -> None:
-    parts = prompts.load_parts(vault, "promise")
+    parts = prompts.load_parts(vault, "reminder")
 
-    assert parts.kind == "promise"
+    assert parts.kind == "reminder"
     assert parts.shared == (vault / "prompt.md").read_text(encoding="utf-8")
-    assert parts.kind_prompt == (vault / "types" / "promise" / "prompt.md").read_text(encoding="utf-8")
-    assert parts.template == (vault / "types" / "promise" / "template.md").read_text(encoding="utf-8")
+    assert parts.kind_prompt == (vault / "types" / "reminder" / "prompt.md").read_text(encoding="utf-8")
+    assert parts.template == (vault / "types" / "reminder" / "template.md").read_text(encoding="utf-8")
 
 
 def test_load_parts_tolerates_missing_prompt_files(vault: Path) -> None:
@@ -59,7 +59,7 @@ def test_load_parts_tolerates_missing_prompt_files(vault: Path) -> None:
 
 
 def test_load_parts_rejects_an_unknown_kind(vault: Path) -> None:
-    expected = r"unknown kind `recipe` \(known kinds: decision, event, fact, idea, promise, reminder\)"
+    expected = r"unknown kind `recipe` \(known kinds: decision, fact, idea, reminder\)"
 
     with pytest.raises(UsageError, match=expected):
         prompts.load_parts(vault, "recipe")

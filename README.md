@@ -53,7 +53,7 @@ Save this reminder for tomorrow at 09:00?
 
 Choose `Save`, and the note is written to Markdown, indexed for search, committed to Git, and delivered as a desktop notification tomorrow.
 
-The same flow works for decisions, facts, promises, events, and ideas. Nothing is saved without your confirmation.
+The same flow works for decisions, facts, and ideas. Nothing is saved without your confirmation.
 
 ## Agent integration
 
@@ -83,7 +83,7 @@ Notes can also be drafted with the configured generator. `notes prompt` shows th
 The generator receives a prompt on standard input and returns JSON with a short name and Markdown:
 
 ```json
-{"short_name": "postgresql-event-log", "markdown": "---\nkind: decision\n..."}
+{ "short_name": "postgresql-event-log", "markdown": "---\nkind: decision\n..." }
 ```
 
 ## Note format
@@ -111,7 +111,7 @@ related:
 **Rationale:** It provides transactional writes, retention controls, and familiar recovery tooling.
 ```
 
-`kind` and `status` are required. The built-in kinds are `decision`, `fact`, `promise`, `event`, `reminder`, and `idea`. A `promise` or `reminder` also requires a `schedule`. Unknown frontmatter keys are preserved.
+`kind` and `status` are required. The built-in kinds are `decision`, `fact`, `reminder`, and `idea`. A `reminder` also requires a `schedule`. Unknown frontmatter keys are preserved.
 
 Relations can be `supersedes`, `child`, or `related`. Superseded notes remain unchanged on disk but are hidden from normal search unless an exact tag or issue ID matches.
 

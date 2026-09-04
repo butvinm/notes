@@ -1,6 +1,6 @@
 # Drafting a note
 
-You are drafting one note for a personal knowledge vault. The vault belongs to a developer who keeps decisions, facts, promises, events, reminders, and ideas as Markdown files, one file per note. The note you write is shown to the developer for confirmation before it is saved; nothing is saved automatically.
+You are drafting one note for a personal knowledge vault. The vault belongs to a developer who keeps decisions, facts, reminders, and ideas as Markdown files, one file per note. The note you write is shown to the developer for confirmation before it is saved; nothing is saved automatically.
 
 ## What you receive
 

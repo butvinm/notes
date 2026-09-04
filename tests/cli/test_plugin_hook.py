@@ -330,10 +330,9 @@ def test_drafting_skill_follows_the_shared_procedure(skill: str) -> None:
 def test_capture_skill_picks_the_kind() -> None:
     _, body = split_frontmatter(skill_text("capture"))
 
-    for mention in ("`fact`", "`event`", "`promise`", "`idea`", "/notes:decision", "/notes:reminder"):
+    for mention in ("`fact`", "`idea`", "/notes:decision", "/notes:reminder"):
         assert mention in body, mention
-    assert "the default for a statement" in body
-    assert "the default for an outcome or an incident" in body
+    assert "the default" in body
 
 
 def test_decision_skill_fixes_the_kind_and_offers_supersedes() -> None:

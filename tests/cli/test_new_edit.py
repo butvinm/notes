@@ -179,21 +179,6 @@ def test_schedule_prompt_repeats_until_the_answer_is_acceptable(
     assert "schedule: at 2026-09-03T09:30:00+03:00\n" in text
 
 
-def test_promise_prompt_rejects_a_recurring_schedule(
-    runner: CliRunner, vault: Path, fake_editor: FakeEditor, frozen_now: datetime, terminal: None
-) -> None:
-    result = runner.invoke(
-        cli, ["new", "promise", "Send the report", "--name", "report"], input="every 2 weeks\n2026-10-01 18:00\n"
-    )
-
-    assert result.exit_code == 0, result.output
-    assert "Error: a promise needs a one-shot `at <timestamp>` schedule, its due date" in result.stdout
-    text = (vault / "notes/2026-09-02-report.md").read_text(encoding="utf-8")
-    assert "schedule: at 2026-10-01T18:00:00+03:00\n" in text
-    assert "**Due:** at 2026-10-01T18:00:00+03:00\n" in text
-    assert indexed_paths(vault) == ["notes/2026-09-02-report.md"]
-
-
 def test_relative_schedule_written_by_the_editor_is_normalized_in_the_file(
     runner: CliRunner, vault: Path, git_cmd: Git, fake_editor: FakeEditor, frozen_now: datetime, terminal: None
 ) -> None:
@@ -353,9 +338,7 @@ def test_unknown_kind_fails_before_anything_is_created(
     result = runner.invoke(cli, ["new", "recipe", "Borscht"])
 
     assert result.exit_code == 1
-    assert result.stderr == (
-        "Error: unknown kind `recipe` (known kinds: decision, event, fact, idea, promise, reminder)\n"
-    )
+    assert result.stderr == ("Error: unknown kind `recipe` (known kinds: decision, fact, idea, reminder)\n")
     assert note_files(vault) == []
     assert status(git_cmd, vault) == []
 
