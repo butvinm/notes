@@ -37,23 +37,57 @@ To try a local checkout without installing the plugin, use `claude --plugin-dir 
 
 ### Ask your agent
 
-You:
+Ask your agent to save project decisions, facts, ideas, and reminders. The plugin drafts each note and asks for confirmation before saving it.
 
-> Remind me to publish the release tomorrow.
+Here are a few software-project memory examples:
 
-The plugin recognizes the reminder request, drafts a note, and asks for confirmation:
+### Record a decision
 
 ```text
-Save this reminder for tomorrow at 09:00?
+You: Remember that we chose PostgreSQL for the event log.
+
+Claude: I'll save this as a decision note:
+
+Use PostgreSQL for the event log
+
+Decision: Store application events in PostgreSQL.
+
+Save this note?
 
 1. Save
 2. Revise
 3. Cancel
 ```
 
-Choose `Save`, and the note is written to Markdown, indexed for search, committed to Git, and delivered as a desktop notification tomorrow.
+### Recall a decision
 
-The same flow works for decisions, facts, and ideas. Nothing is saved without your confirmation.
+```text
+You: What did we decide about authentication?
+
+Claude: You decided to use short-lived access tokens with refresh-token rotation. The decision was recorded in `2026-08-28-authentication.md`.
+```
+
+### Schedule follow-up work
+
+```text
+You: Remind me to review the migration plan next Friday.
+
+Claude: Save this reminder for Friday at 09:00?
+
+Review the migration plan
+
+1. Save
+2. Revise
+3. Cancel
+```
+
+### Capture an observation
+
+```text
+You: This API behavior is surprising.
+
+Claude: I can save this as a project fact or idea. What should I record about the behavior?
+```
 
 ## Agent integration
 
