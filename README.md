@@ -61,7 +61,7 @@ The plugin connects the agent to the vault in two directions: it recalls existin
 
 Before each user prompt, the hook runs `notes recall` with the prompt and current working directory. It injects a small context block containing unread reminders and the most relevant note titles, paths, and match reasons. It does not inject full note bodies. If the CLI, `jq`, or an initialized vault is unavailable, it injects nothing.
 
-Use `/notes:recall` when the automatic context is not enough. The recall skill searches by issue ID, tag, project, or text, then reads the notes needed to answer. Use `/notes:capture`, `/notes:decision`, and `/notes:reminder` to create notes from the current conversation.
+Use `/notes:recall` when the automatic context is not enough. The recall skill searches by issue ID, tag, project, or text, then reads the notes needed to answer. Use `/notes:fact`, `/notes:idea`, `/notes:decision`, and `/notes:reminder` to create notes from the current conversation, one skill per kind, and `/notes:note` for a kind you added yourself.
 
 ## Command-line interface
 
