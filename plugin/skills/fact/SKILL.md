@@ -14,7 +14,7 @@ Record what is the case as a `fact` note in the vault at `~/.notes`, through the
 3. **Ask one targeted clarification question only if critical context is missing**: a fact without a source, something that happened without a date. Otherwise do not ask.
 4. Run `notes prompt fact` and shape the packet to what it expects.
 5. Write the packet (below) to a temporary file with the Write tool, then run `notes draft create fact --json < <packet file>` in the background and continue the conversation; the generator can take a minute or more. The JSON names the draft `id`, `short_name`, and `abs_path`; a failure stores nothing.
-6. Read the draft with `notes draft show <draft-id>` and show it to the user through `AskUserQuestion` with three options: **save**, **revise** (free-form feedback), **cancel**.
+6. **Show the draft in your own message**: read it with `notes draft show <draft-id>` and print the complete note back in a fenced Markdown block, with any remark of your own after it. The terminal collapses long tool output, so a draft that only the command printed was never shown to the user. Then ask through `AskUserQuestion` with three options: **save**, **revise** (free-form feedback), **cancel**.
    - save: `notes draft save <draft-id> --json` (`--name "<short name>"` for a different filename slug); report the link it prints
    - revise: `notes draft revise <draft-id> "<feedback>" --json`, then show the new draft the same way
    - cancel: `notes draft discard <draft-id>`
