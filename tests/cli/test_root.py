@@ -24,6 +24,46 @@ def test_help_lists_root_group(runner: CliRunner) -> None:
     assert "--version" in result.output
 
 
+WHOLE_SUMMARIES = {
+    "root": (
+        ["--help"],
+        "Validate every note and list the invalid files with line numbers; exit 1 when any file is invalid.",
+    ),
+    "draft": (
+        ["draft", "--help"],
+        "Turn the draft into a note: validate it, write it under notes/, index and commit it, delete the draft.",
+    ),
+    "notifications": (
+        ["notifications", "--help"],
+        "Report whether the timer is installed, enabled, and active, its next run, and the recent service journal.",
+    ),
+}
+
+
+@pytest.mark.parametrize(("args", "sentence"), WHOLE_SUMMARIES.values(), ids=WHOLE_SUMMARIES.keys())
+def test_group_help_shows_whole_command_summaries(runner: CliRunner, args: list[str], sentence: str) -> None:
+    """click would cut each summary at 45 characters with `...`; the groups print the whole first paragraph, wrapped."""
+    result = runner.invoke(cli, args, terminal_width=80)
+
+    assert result.exit_code == 0
+    commands = result.output.split("Commands:", 1)[1]
+    assert " ".join(commands.split()).count(sentence) == 1
+    assert "..." not in commands
+    assert all(len(line) <= 80 for line in commands.splitlines())
+
+
+def test_summary_prefers_short_help_and_joins_the_first_paragraph() -> None:
+    from notes.cli import summary
+
+    with_short = click.Command("a", help="Long text.\n\nMore.", short_help="Short.")
+    wrapped = click.Command("b", help="First line\ncontinues here.\n\nSecond paragraph.")
+    bare = click.Command("c")
+
+    assert summary(with_short) == "Short."
+    assert summary(wrapped) == "First line continues here."
+    assert summary(bare) == ""
+
+
 def test_version_prints_package_version(runner: CliRunner) -> None:
     result = runner.invoke(cli, ["--version"])
 

@@ -67,7 +67,34 @@ class CliError(click.ClickException):
         emit_error(self.error, as_json=self.as_json, file=file)
 
 
-class NotesGroup(click.Group):
+class FullHelpGroup(click.Group):
+    """A group whose help lists every command with its whole summary paragraph, wrapped rather than cut with `...`.
+
+    click's default keeps the first 45 characters of a command's help; the summaries here are one full sentence each
+    and are meant to be read from `notes --help` without opening each command's help.
+    """
+
+    def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        rows: list[tuple[str, str]] = []
+        for name in self.list_commands(ctx):
+            command = self.get_command(ctx, name)
+            if command is None or command.hidden:
+                continue
+            rows.append((name, summary(command)))
+        if rows:
+            with formatter.section("Commands"):
+                formatter.write_dl(rows)
+
+
+def summary(command: click.Command) -> str:
+    """The command's `short_help`, or else the first paragraph of its help joined onto one line."""
+    if command.short_help:
+        return command.short_help
+    paragraph = (command.help or "").split("\n\n", 1)[0]
+    return " ".join(paragraph.split())
+
+
+class NotesGroup(FullHelpGroup):
     """The root group class: a `NotesError` raised by any command becomes exit code 1 with human or JSON output."""
 
     def invoke(self, ctx: click.Context) -> Any:

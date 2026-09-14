@@ -21,7 +21,7 @@ import click
 from ruamel.yaml.comments import CommentedMap
 
 from notes import clock, deliveries, document, drafts, generator
-from notes.cli import get_session, vault_command
+from notes.cli import FullHelpGroup, get_session, vault_command
 from notes.cli.edit import as_data, fail_invalid, invalid_of, note_title, render
 from notes.document import ValidationError
 from notes.drafts import Draft
@@ -33,7 +33,7 @@ from notes.sync import InvalidFile, error_lines
 from notes.vault import known_kinds
 
 
-@click.group("draft")
+@click.group("draft", cls=FullHelpGroup)
 def draft_group() -> None:
     """Draft notes with the configured generator and keep them until they are saved or discarded."""
 

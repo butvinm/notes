@@ -9,13 +9,13 @@ from typing import Any
 import click
 
 from notes import systemd
-from notes.cli import json_option
+from notes.cli import FullHelpGroup, json_option
 from notes.output import emit, json_enabled
 from notes.systemd import SERVICE_NAME, TIMER_NAME
 from notes.vault import require_vault
 
 
-@click.group("notifications")
+@click.group("notifications", cls=FullHelpGroup)
 def notifications_group() -> None:
     """Manage the systemd user timer that runs `notes tick` every minute and delivers due notes."""
 
