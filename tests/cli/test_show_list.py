@@ -8,6 +8,7 @@ import json
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
+import click
 import pytest
 from click.testing import CliRunner
 
@@ -194,13 +195,41 @@ def test_list_orders_newest_first_then_by_path(runner: CliRunner, vault: Path, c
 
     assert result.exit_code == 0, result.output
     assert result.stdout.splitlines() == [
-        f"decision active [{KAFKA}]({vault / KAFKA}) - Project Atlas task updates over Kafka",
-        f"reminder active [{PLANTS}]({vault / PLANTS}) - Water the plants",
+        f"decision active     [{KAFKA}]({vault / KAFKA}) - Project Atlas task updates over Kafka",
+        f"reminder active     [{PLANTS}]({vault / PLANTS}) - Water the plants",
         f"decision superseded [{OLD}]({vault / OLD}) - Kafka over WebSocket",
-        f"fact archived [{LEGACY}]({vault / LEGACY}) - Legacy fact",
-        f"idea active [{IDEA}]({vault / IDEA}) - An idea",
+        f"fact     archived   [{LEGACY}]({vault / LEGACY}) - Legacy fact",
+        f"idea     active     [{IDEA}]({vault / IDEA}) - An idea",
     ]
     assert result.stderr == ""
+
+
+def test_list_columns_are_padded_only_to_the_listing(runner: CliRunner, vault: Path, corpus: dict[str, str]) -> None:
+    """A listing of one kind and one status carries no padding: the widths come from the rows shown, not all kinds."""
+    result = runner.invoke(cli, ["list", "--kind", "decision", "--status", "active"])
+
+    assert result.exit_code == 0, result.output
+    assert result.stdout == f"decision active [{KAFKA}]({vault / KAFKA}) - Project Atlas task updates over Kafka\n"
+
+
+def test_list_colours_the_columns_on_a_terminal(
+    runner: CliRunner, vault: Path, corpus: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    deliver(vault, OLD, "2026-09-01T09:00:00+03:00")
+    monkeypatch.setenv("FORCE_COLOR", "1")
+
+    coloured = runner.invoke(cli, ["list"], color=True)
+    monkeypatch.setenv("NO_COLOR", "1")
+    plain = runner.invoke(cli, ["list"], color=True)
+
+    assert coloured.exit_code == 0, coloured.output
+    first = coloured.stdout.splitlines()[0]
+    assert click.style("[unread]", fg="yellow", bold=True) in first
+    assert click.style("decision", fg="cyan") in first
+    assert click.style("superseded", fg="magenta") in first
+    assert click.style("Kafka over WebSocket", bold=True) in first
+    assert click.unstyle(coloured.stdout) == plain.stdout
+    assert "\x1b[" not in plain.stdout
 
 
 def test_list_puts_unread_notes_first(runner: CliRunner, vault: Path, corpus: dict[str, str]) -> None:
@@ -214,7 +243,8 @@ def test_list_puts_unread_notes_first(runner: CliRunner, vault: Path, corpus: di
     lines = result.stdout.splitlines()
     assert listed_paths(result.stdout) == [OLD, IDEA, KAFKA, PLANTS, LEGACY]
     assert lines[0] == f"[unread] decision superseded [{OLD}]({vault / OLD}) - Kafka over WebSocket"
-    assert lines[1] == f"[unread] idea active [{IDEA}]({vault / IDEA}) - An idea"
+    assert lines[1] == f"[unread] idea     active     [{IDEA}]({vault / IDEA}) - An idea"
+    assert lines[2].startswith(f"         decision active     [{KAFKA}]({vault / KAFKA}) - ")
     assert "[unread]" not in "\n".join(lines[2:])
 
 

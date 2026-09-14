@@ -11,9 +11,11 @@ import click
 
 from notes import queries
 from notes.cli import get_session, vault_command
-from notes.output import emit, render_link
+from notes.output import emit, render_link, style_kind, style_status, style_unread
 from notes.prompts import require_kind
 from notes.queries import EFFECTIVE_STATUSES, NoteRow
+
+UNREAD_MARKER = "[unread]"
 
 
 @vault_command("list")
@@ -43,10 +45,24 @@ def list_command(
 
 
 def render(vault: Path, rows: Iterable[NoteRow]) -> str:
-    """One line per note: `[unread] <kind> <effective status> [id](abs) - Title`, the prefix only when unread."""
-    return "\n".join(render_line(vault, row) for row in rows)
+    """One line per note: `[unread] <kind> <effective status> [id](abs) - Title`, as aligned columns.
+
+    The kind and status columns are padded to the widest value in the listing. The `[unread]` column exists only when
+    some note is unread; the read notes then carry blanks in its place, so the links start at the same column.
+    """
+    rows = list(rows)
+    marker_width = len(UNREAD_MARKER) if any(row.unread for row in rows) else 0
+    kind_width = max((len(row.kind) for row in rows), default=0)
+    status_width = max((len(row.effective_status) for row in rows), default=0)
+    return "\n".join(render_line(vault, row, marker_width, kind_width, status_width) for row in rows)
 
 
-def render_line(vault: Path, row: NoteRow) -> str:
-    prefix = "[unread] " if row.unread else ""
-    return f"{prefix}{row.kind} {row.effective_status} {render_link(vault, row.path, row.title)}"
+def render_line(vault: Path, row: NoteRow, marker_width: int = 0, kind_width: int = 0, status_width: int = 0) -> str:
+    """One listing line; the widths pad each column, and a zero marker width leaves the `[unread]` column out."""
+    columns: list[str] = []
+    if marker_width:
+        columns.append(style_unread(UNREAD_MARKER) if row.unread else " " * marker_width)
+    columns.append(style_kind(row.kind.ljust(kind_width)))
+    columns.append(style_status(row.effective_status.ljust(status_width)))
+    columns.append(render_link(vault, row.path, row.title))
+    return " ".join(columns)

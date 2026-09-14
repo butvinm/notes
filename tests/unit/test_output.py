@@ -28,6 +28,61 @@ def test_render_link_keeps_unicode() -> None:
     assert link == "[notes/2026-09-02-задачи.md](/h/.notes/notes/2026-09-02-задачи.md) - Обновления задач"
 
 
+# Colour
+
+
+def test_colour_follows_no_color_force_color_then_the_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.delenv("FORCE_COLOR", raising=False)
+    monkeypatch.setattr("sys.stdout", io.StringIO())
+    assert output.colors_enabled() is False
+
+    monkeypatch.setenv("FORCE_COLOR", "1")
+    assert output.colors_enabled() is True
+
+    monkeypatch.setenv("NO_COLOR", "1")
+    assert output.colors_enabled() is False
+
+
+def test_style_helpers_are_plain_without_colour(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("NO_COLOR", "1")
+
+    assert output.style("x", fg="red") == "x"
+    assert output.style_kind("idea") == "idea"
+    assert output.style_status("active") == "active"
+    assert output.style_unread("[unread]") == "[unread]"
+    assert output.style_reasons("[text]") == "[text]"
+    assert output.style_label("delivered:") == "delivered:"
+    assert output.render_link(Path("/h"), "notes/a.md", "T") == "[notes/a.md](/h/notes/a.md) - T"
+
+
+def test_style_helpers_colour_each_field_under_force_color(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setenv("FORCE_COLOR", "1")
+
+    assert output.style_kind("idea") == click.style("idea", fg="cyan")
+    assert output.style_status("active") == click.style("active", fg="green")
+    assert output.style_status("archived  ") == click.style("archived  ", fg="bright_black")
+    assert output.style_status("superseded") == click.style("superseded", fg="magenta")
+    assert output.style_status("unknown") == "unknown"
+    assert output.style_unread("[unread]") == click.style("[unread]", fg="yellow", bold=True)
+    assert output.style_reasons("[text]") == click.style("[text]", fg="blue")
+    assert output.style_label("delivered:") == click.style("delivered:", fg="green", bold=True)
+    bold_title = click.style("T", bold=True)
+    assert output.render_link(Path("/h"), "notes/a.md", "T") == f"[notes/a.md](/h/notes/a.md) - {bold_title}"
+
+
+def test_emit_keeps_the_colour_under_force_color_even_off_a_terminal(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setenv("FORCE_COLOR", "1")
+
+    output.emit(context(False), output.style_kind("idea"), {})
+
+    assert capsys.readouterr().out == click.style("idea", fg="cyan") + "\n"
+
+
 def test_emit_prints_human_text_by_default(capsys: pytest.CaptureFixture[str]) -> None:
     output.emit(context(False), "hello", {"greeting": "hello"})
 

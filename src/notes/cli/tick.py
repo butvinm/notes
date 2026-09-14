@@ -19,7 +19,7 @@ from notes import clock, deliveries
 from notes import schedule as schedules
 from notes.cli import get_session, vault_command
 from notes.deliveries import Delivered
-from notes.output import emit, render_link
+from notes.output import emit, render_link, style_label
 
 
 def _parse_now(_ctx: click.Context, _param: click.Parameter, value: str | None) -> datetime | None:
@@ -57,7 +57,7 @@ def render(vault: Path, delivered: Iterable[Delivered]) -> str:
 
 
 def render_line(vault: Path, item: Delivered) -> str:
-    return f"delivered: {render_link(vault, item.path, item.title)} (due {item.occurrence_at})"
+    return f"{style_label('delivered:')} {render_link(vault, item.path, item.title)} (due {item.occurrence_at})"
 
 
 def as_data(vault: Path, item: Delivered) -> dict[str, Any]:

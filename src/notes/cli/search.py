@@ -11,7 +11,7 @@ from pathlib import Path
 import click
 
 from notes.cli import get_session, vault_command
-from notes.output import emit, render_link
+from notes.output import emit, render_link, style_reasons
 from notes.search import SearchResult, as_data, search
 
 DEFAULT_LIMIT = 20
@@ -51,4 +51,5 @@ def render(vault: Path, results: Iterable[SearchResult]) -> str:
 
 def render_line(vault: Path, result: SearchResult) -> str:
     """`[reasons] [id](abs) - Title`, the reasons comma-separated: `[issue: ATLAS-27, text, superseded]`."""
-    return f"[{', '.join(result.reasons)}] {render_link(vault, result.path, result.title)}"
+    reasons = style_reasons(f"[{', '.join(result.reasons)}]")
+    return f"{reasons} {render_link(vault, result.path, result.title)}"

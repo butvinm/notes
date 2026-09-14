@@ -108,6 +108,8 @@ notes --help
 notes <command> --help
 ```
 
+Human output is coloured on a terminal: kinds, statuses, the `[unread]` marker, match reasons, and titles each get a colour, and `notes list` aligns its columns. Set `NO_COLOR` to turn colour off, or `FORCE_COLOR` to keep it when piping. The text is the same either way, so scripts that read the lines see no escape codes unless they ask for them.
+
 The sections below cover the main CLI workflows.
 
 ## Create and save notes

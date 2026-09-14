@@ -190,7 +190,7 @@ def test_unread_deliveries_follow_the_note(runner: CliRunner, three_notes: Path)
         (KAFKA, OCCURRENCE, None),
     ]
     assert unread.stdout == (
-        f"[unread] decision active [{KAFKA}]({vault / KAFKA}) - {KAFKA_TITLE}\n"
+        f"[unread] decision active     [{KAFKA}]({vault / KAFKA}) - {KAFKA_TITLE}\n"
         f"[unread] decision superseded [{NEW}]({vault / NEW}) - {OLD_TITLE}\n"
     )
 
