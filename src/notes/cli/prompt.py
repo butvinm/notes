@@ -8,7 +8,7 @@ from notes.output import emit
 from notes.vault import require_vault
 
 
-@click.command("prompt")
+@click.command("prompt", short_help="Print the generator prompt for a kind")
 @click.argument("kind")
 @json_option
 @click.pass_context

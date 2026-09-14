@@ -19,7 +19,7 @@ from notes.sync import InvalidFile, SyncReport, error_lines
 from notes.vault import resolve_id
 
 
-@vault_command("edit")
+@vault_command("edit", short_help="Open a note in the editor")
 @click.argument("note_id", metavar="ID")
 @click.pass_context
 def edit_command(ctx: click.Context, note_id: str) -> None:

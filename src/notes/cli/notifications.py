@@ -9,18 +9,18 @@ from typing import Any
 import click
 
 from notes import systemd
-from notes.cli import FullHelpGroup, json_option
+from notes.cli import SectionedGroup, json_option
 from notes.output import emit, json_enabled
 from notes.systemd import SERVICE_NAME, TIMER_NAME
 from notes.vault import require_vault
 
 
-@click.group("notifications", cls=FullHelpGroup)
+@click.group("notifications", cls=SectionedGroup, short_help="Manage the timer that delivers reminders")
 def notifications_group() -> None:
     """Manage the systemd user timer that runs `notes tick` every minute and delivers due notes."""
 
 
-@notifications_group.command("enable")
+@notifications_group.command("enable", short_help="Install and start the timer")
 @json_option
 @click.pass_context
 def enable_command(ctx: click.Context) -> None:
@@ -47,7 +47,7 @@ def enable_command(ctx: click.Context) -> None:
     emit(ctx, "\n".join(lines), data)
 
 
-@notifications_group.command("disable")
+@notifications_group.command("disable", short_help="Stop and remove the timer")
 @json_option
 @click.pass_context
 def disable_command(ctx: click.Context) -> None:
@@ -61,7 +61,7 @@ def disable_command(ctx: click.Context) -> None:
     emit(ctx, "\n".join(lines), data)
 
 
-@notifications_group.command("status")
+@notifications_group.command("status", short_help="Report the timer state and recent journal")
 @json_option
 @click.pass_context
 def status_command(ctx: click.Context) -> None:

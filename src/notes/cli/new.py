@@ -24,7 +24,7 @@ from notes.vault import kind_template_path
 SCHEDULE_EXAMPLES = "`in 3 days`, `tomorrow 09:00`, `2026-10-01 18:00`, `every 2 weeks`"
 
 
-@vault_command("new")
+@vault_command("new", short_help="Create a note from its kind's template")
 @click.argument("kind")
 @click.argument("title", required=False)
 @click.option(

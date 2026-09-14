@@ -18,7 +18,7 @@ from notes.queries import EFFECTIVE_STATUSES, NoteRow
 UNREAD_MARKER = "[unread]"
 
 
-@vault_command("list")
+@vault_command("list", short_help="List notes, with filters")
 @click.option("--unread", is_flag=True, help="Only notes with a delivery that has not been read.")
 @click.option("--kind", metavar="KIND", help="Only notes of this kind.")
 @click.option(

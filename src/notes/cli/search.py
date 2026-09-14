@@ -17,7 +17,7 @@ from notes.search import SearchResult, as_data, search
 DEFAULT_LIMIT = 20
 
 
-@vault_command("search")
+@vault_command("search", short_help="Search notes by text, tag, or issue ID")
 @click.argument("query")
 @click.option(
     "--limit",

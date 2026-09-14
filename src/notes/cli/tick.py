@@ -31,7 +31,7 @@ def _parse_now(_ctx: click.Context, _param: click.Parameter, value: str | None) 
         raise click.BadParameter(str(error)) from None
 
 
-@vault_command("tick", index_only=True)
+@vault_command("tick", index_only=True, short_help="Deliver the notes that are due")
 @click.option(
     "--now",
     "now",

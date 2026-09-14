@@ -14,7 +14,7 @@ from notes.output import json_enabled, to_json
 from notes.vault import resolve_id
 
 
-@vault_command("show")
+@vault_command("show", short_help="Print a note")
 @click.argument("note_id", metavar="ID")
 @click.pass_context
 def show_command(ctx: click.Context, note_id: str) -> None:

@@ -11,7 +11,7 @@ import pytest
 from click.testing import CliRunner
 
 from notes import __version__
-from notes.cli import cli, json_option
+from notes.cli import SECTIONS, SectionedGroup, cli, json_option, summary
 from notes.errors import GitError
 from notes.output import emit
 
@@ -24,37 +24,78 @@ def test_help_lists_root_group(runner: CliRunner) -> None:
     assert "--version" in result.output
 
 
-WHOLE_SUMMARIES = {
-    "root": (
-        ["--help"],
-        "Validate every note and list the invalid files with line numbers; exit 1 when any file is invalid.",
-    ),
-    "draft": (
-        ["draft", "--help"],
-        "Turn the draft into a note: validate it, write it under notes/, index and commit it, delete the draft.",
-    ),
-    "notifications": (
-        ["notifications", "--help"],
-        "Report whether the timer is installed, enabled, and active, its next run, and the recent service journal.",
-    ),
-}
+def test_root_help_groups_commands_under_section_headings(runner: CliRunner) -> None:
+    result = runner.invoke(cli, ["--help"], terminal_width=80)
+
+    assert result.exit_code == 0
+    assert "Commands:" not in result.output
+    headings = [line for line in result.output.splitlines() if line and not line.startswith(" ")]
+    assert headings == [
+        "Usage: notes [OPTIONS] COMMAND [ARGS]...",
+        "Options:",
+        "Notes:",
+        "Reminders:",
+        "Drafting:",
+        "Vault:",
+    ]
+    vault = result.output.split("Vault:", 1)[1]
+    assert vault.splitlines()[1:] == [
+        "  init           Create the vault, or clone it from a remote",
+        "  sync           Index changed notes",
+        "  check          Validate every note",
+        "  push           Push the vault to its remote",
+        "  pull           Fast-forward the vault from its remote",
+    ]
 
 
-@pytest.mark.parametrize(("args", "sentence"), WHOLE_SUMMARIES.values(), ids=WHOLE_SUMMARIES.keys())
-def test_group_help_shows_whole_command_summaries(runner: CliRunner, args: list[str], sentence: str) -> None:
-    """click would cut each summary at 45 characters with `...`; the groups print the whole first paragraph, wrapped."""
+def test_every_root_command_sits_in_exactly_one_section() -> None:
+    sectioned = [name for _, names in SECTIONS for name in names]
+
+    assert sorted(sectioned) == sorted(cli.commands)
+    assert len(sectioned) == len(set(sectioned))
+
+
+def walk(group: click.Group, prefix: str = "") -> Iterator[tuple[str, click.Command]]:
+    """Every command of the tree with its full name, `notes draft save` as `draft save`."""
+    for name, command in group.commands.items():
+        yield f"{prefix}{name}", command
+        if isinstance(command, click.Group):
+            yield from walk(command, f"{prefix}{name} ")
+
+
+@pytest.mark.parametrize(("name", "command"), list(walk(cli)), ids=[name for name, _ in walk(cli)])
+def test_each_command_has_a_short_summary_that_fits_one_help_line(name: str, command: click.Command) -> None:
+    """A group lists each command on one line, the way `git` and `uv` do; the summary is a few words, never cut."""
+    assert command.short_help, f"{name} has no short_help"
+    assert len(command.short_help) <= 50, f"{name}: short_help is {len(command.short_help)} characters"
+    assert not command.short_help.endswith(".")
+    assert command.get_short_help_str(limit=45) == command.short_help
+
+
+@pytest.mark.parametrize("args", [["draft", "--help"], ["notifications", "--help"]], ids=["draft", "notifications"])
+def test_sub_group_help_lists_commands_on_one_line_each(runner: CliRunner, args: list[str]) -> None:
     result = runner.invoke(cli, args, terminal_width=80)
 
     assert result.exit_code == 0
-    commands = result.output.split("Commands:", 1)[1]
-    assert " ".join(commands.split()).count(sentence) == 1
-    assert "..." not in commands
-    assert all(len(line) <= 80 for line in commands.splitlines())
+    commands = result.output.split("Commands:", 1)[1].strip("\n").splitlines()
+    assert commands
+    assert all(line.startswith("  ") and not line.startswith("   ") and "..." not in line for line in commands)
+
+
+def test_sectioned_group_lists_unplaced_commands_under_other(runner: CliRunner) -> None:
+    group = SectionedGroup("probe", sections=(("First", ("a",)),))
+    group.add_command(click.Command("a", short_help="The a"))
+    group.add_command(click.Command("b", short_help="The b"))
+    group.add_command(click.Command("hidden", short_help="Never shown", hidden=True))
+
+    result = runner.invoke(group, ["--help"])
+
+    assert result.exit_code == 0
+    assert result.output.split("Options:", 1)[1].endswith("First:\n  a  The a\n\nOther:\n  b  The b\n")
+    assert "hidden" not in result.output
 
 
 def test_summary_prefers_short_help_and_joins_the_first_paragraph() -> None:
-    from notes.cli import summary
-
     with_short = click.Command("a", help="Long text.\n\nMore.", short_help="Short.")
     wrapped = click.Command("b", help="First line\ncontinues here.\n\nSecond paragraph.")
     bare = click.Command("c")

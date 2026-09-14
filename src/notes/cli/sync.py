@@ -7,7 +7,7 @@ from notes.output import emit, json_enabled
 from notes.sync import SyncReport, error_lines, report_as_data
 
 
-@vault_command("sync")
+@vault_command("sync", short_help="Index changed notes")
 @click.pass_context
 def sync_command(ctx: click.Context) -> None:
     """Index changed notes into SQLite and report the changes; invalid files are warnings, not errors."""

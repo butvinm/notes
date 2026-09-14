@@ -19,7 +19,7 @@ UNREAD_HEADING = "Unread notes:"
 RELATED_HEADING = "Related notes:"
 
 
-@vault_command("recall", offline=True)
+@vault_command("recall", offline=True, short_help="Surface the notes relevant to a prompt")
 @click.argument("query", required=False)
 @click.option(
     "--cwd",

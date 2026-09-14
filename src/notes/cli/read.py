@@ -21,7 +21,7 @@ from notes.output import emit
 from notes.vault import resolve_id
 
 
-@vault_command("read", index_only=True)
+@vault_command("read", index_only=True, short_help="Mark a note read")
 @click.argument("note_id", metavar="ID")
 @click.pass_context
 def read_command(ctx: click.Context, note_id: str) -> None:

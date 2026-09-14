@@ -67,23 +67,47 @@ class CliError(click.ClickException):
         emit_error(self.error, as_json=self.as_json, file=file)
 
 
-class FullHelpGroup(click.Group):
-    """A group whose help lists every command with its whole summary paragraph, wrapped rather than cut with `...`.
+Sections = tuple[tuple[str, tuple[str, ...]], ...]
 
-    click's default keeps the first 45 characters of a command's help; the summaries here are one full sentence each
-    and are meant to be read from `notes --help` without opening each command's help.
+SECTIONS: Sections = (
+    ("Notes", ("new", "edit", "show", "list", "search", "recall", "relate", "move")),
+    ("Reminders", ("tick", "read", "notifications")),
+    ("Drafting", ("draft", "prompt")),
+    ("Vault", ("init", "sync", "check", "push", "pull")),
+)
+
+
+class SectionedGroup(click.Group):
+    """A group whose help lists its commands the way `gh` and `uv` do: one short line each, grouped under headings.
+
+    Every command declares a `short_help` of a few words, so no summary is ever cut with `...` or wrapped. `sections`
+    names the headings and the commands under each, in the order shown; commands left out of every section go under
+    `Other` at the end, and a group without sections prints one `Commands` block.
     """
 
+    def __init__(self, *args: Any, sections: Sections = (), **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.sections = sections
+
     def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
-        rows: list[tuple[str, str]] = []
-        for name in self.list_commands(ctx):
-            command = self.get_command(ctx, name)
-            if command is None or command.hidden:
-                continue
-            rows.append((name, summary(command)))
-        if rows:
-            with formatter.section("Commands"):
-                formatter.write_dl(rows)
+        commands = {
+            name: command
+            for name in self.list_commands(ctx)
+            if (command := self.get_command(ctx, name)) is not None and not command.hidden
+        }
+        if not commands:
+            return
+        width = max(len(name) for name in commands)
+        blocks = list(self.sections)
+        placed = {name for _, names in self.sections for name in names}
+        remaining = tuple(name for name in commands if name not in placed)
+        if remaining:
+            blocks.append(("Other" if self.sections else "Commands", remaining))
+        for heading, names in blocks:
+            rows = [(name.ljust(width), summary(commands[name])) for name in names if name in commands]
+            if rows:
+                with formatter.section(heading):
+                    formatter.write_dl(rows)
 
 
 def summary(command: click.Command) -> str:
@@ -94,7 +118,7 @@ def summary(command: click.Command) -> str:
     return " ".join(paragraph.split())
 
 
-class NotesGroup(FullHelpGroup):
+class NotesGroup(SectionedGroup):
     """The root group class: a `NotesError` raised by any command becomes exit code 1 with human or JSON output."""
 
     def invoke(self, ctx: click.Context) -> Any:
@@ -192,7 +216,7 @@ def get_session(ctx: click.Context) -> Session:
     return session
 
 
-@click.group("notes", cls=NotesGroup, context_settings={"help_option_names": ["-h", "--help"]})
+@click.group("notes", cls=NotesGroup, sections=SECTIONS, context_settings={"help_option_names": ["-h", "--help"]})
 @click.version_option(__version__, prog_name="notes")
 @click.pass_context
 def cli(ctx: click.Context) -> None:
