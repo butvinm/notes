@@ -62,9 +62,22 @@ def style_label(label: str) -> str:
     return style(label, fg="green", bold=True)
 
 
+def hyperlink(text: str, uri: str) -> str:
+    """`text` wrapped in an OSC 8 hyperlink to `uri`: the terminal shows the text and opens the target on click."""
+    return f"\x1b]8;;{uri}\x1b\\{text}\x1b]8;;\x1b\\"
+
+
 def render_link(vault: Path, path: str, title: str) -> str:
-    """The ID linked to its absolute path, then the title: `[notes/x.md](/home/u/.notes/notes/x.md) - Title`."""
-    return f"[{path}]({vault / path}) - {style(title, bold=True)}"
+    """A note as a clickable reference, in the shape that suits the reader.
+
+    In a pipe, the ID linked to its absolute path, then the title: `[notes/x.md](/home/u/.notes/notes/x.md) - Title`;
+    the hook and the skills parse that form. On a terminal, the title in bold, then the ID dimmed, both carrying the
+    absolute path as a hyperlink, so the line is half as long and the title comes first.
+    """
+    if not colors_enabled():
+        return f"[{path}]({vault / path}) - {title}"
+    uri = (vault / path).as_uri()
+    return f"{hyperlink(style(title, bold=True), uri)}  {hyperlink(style(path, fg='bright_black'), uri)}"
 
 
 def to_json(data: Any) -> str:

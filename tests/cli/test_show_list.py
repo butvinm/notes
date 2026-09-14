@@ -228,8 +228,12 @@ def test_list_colours_the_columns_on_a_terminal(
     assert click.style("decision", fg="cyan") in first
     assert click.style("superseded", fg="magenta") in first
     assert click.style("Kafka over WebSocket", bold=True) in first
-    assert click.unstyle(coloured.stdout) == plain.stdout
-    assert "\x1b[" not in plain.stdout
+    assert f"\x1b]8;;{(vault / OLD).as_uri()}\x1b\\" in first
+    assert f"[{OLD}]({vault / OLD})" not in first
+    visible = click.unstyle(first).replace("\x1b]8;;\x1b\\", "").replace(f"\x1b]8;;{(vault / OLD).as_uri()}\x1b\\", "")
+    assert visible == f"[unread] decision superseded Kafka over WebSocket  {OLD}"
+    assert plain.stdout.splitlines()[0] == f"[unread] decision superseded [{OLD}]({vault / OLD}) - Kafka over WebSocket"
+    assert "\x1b" not in plain.stdout
 
 
 def test_list_puts_unread_notes_first(runner: CliRunner, vault: Path, corpus: dict[str, str]) -> None:

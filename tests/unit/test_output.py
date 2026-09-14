@@ -68,8 +68,27 @@ def test_style_helpers_colour_each_field_under_force_color(monkeypatch: pytest.M
     assert output.style_unread("[unread]") == click.style("[unread]", fg="yellow", bold=True)
     assert output.style_reasons("[text]") == click.style("[text]", fg="blue")
     assert output.style_label("delivered:") == click.style("delivered:", fg="green", bold=True)
-    bold_title = click.style("T", bold=True)
-    assert output.render_link(Path("/h"), "notes/a.md", "T") == f"[notes/a.md](/h/notes/a.md) - {bold_title}"
+
+
+def test_render_link_on_a_terminal_is_title_then_dim_id_hyperlinked_to_the_file(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The path is carried by an OSC 8 hyperlink rather than printed, so the line stays short and the title leads."""
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setenv("FORCE_COLOR", "1")
+
+    link = output.render_link(Path("/h/.notes"), "notes/2026-09-02-задачи.md", "Обновления задач")
+
+    uri = "file:///h/.notes/notes/2026-09-02-%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%D0%B8.md"
+    assert link == (
+        f"\x1b]8;;{uri}\x1b\\{click.style('Обновления задач', bold=True)}\x1b]8;;\x1b\\"
+        f"  \x1b]8;;{uri}\x1b\\{click.style('notes/2026-09-02-задачи.md', fg='bright_black')}\x1b]8;;\x1b\\"
+    )
+    assert "/h/.notes/notes/2026-09-02-задачи.md" not in link
+
+
+def test_hyperlink_wraps_the_text_in_osc_8() -> None:
+    assert output.hyperlink("x", "file:///a") == "\x1b]8;;file:///a\x1b\\x\x1b]8;;\x1b\\"
 
 
 def test_emit_keeps_the_colour_under_force_color_even_off_a_terminal(

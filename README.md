@@ -108,7 +108,7 @@ notes --help
 notes <command> --help
 ```
 
-Human output is coloured on a terminal: kinds, statuses, the `[unread]` marker, match reasons, and titles each get a colour, and `notes list` aligns its columns. Set `NO_COLOR` to turn colour off, or `FORCE_COLOR` to keep it when piping. The text is the same either way, so scripts that read the lines see no escape codes unless they ask for them.
+Human output adapts to the reader. On a terminal, a note is shown as its title followed by its dimmed ID, both hyperlinked to the file (OSC 8, as `ls --hyperlink` does), kinds, statuses, the `[unread]` marker, and match reasons are coloured, and `notes list` aligns its columns. In a pipe, a note is `[<id>](<absolute path>) - <title>` with no escape codes, the form the hook and the skills parse. Set `NO_COLOR` to force the plain form on a terminal, or `FORCE_COLOR` to force the terminal form when piping.
 
 The sections below cover the main CLI workflows.
 
