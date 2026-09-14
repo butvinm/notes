@@ -149,7 +149,7 @@ def test_list_shows_the_new_id_only_with_the_derived_status_intact(runner: CliRu
     assert listed.exit_code == 0, listed.output
     assert OLD not in listed.stdout
     assert f"[{NEW}]({vault / NEW}) - {OLD_TITLE}" in listed.stdout
-    assert superseded.stdout == f"decision superseded [{NEW}]({vault / NEW}) - {OLD_TITLE}\n"
+    assert superseded.stdout == f"2026-09-01 decision superseded [{NEW}]({vault / NEW}) - {OLD_TITLE}\n"
 
 
 def test_move_into_a_subdirectory_rewrites_relative_references_in_both_directions(
@@ -190,8 +190,8 @@ def test_unread_deliveries_follow_the_note(runner: CliRunner, three_notes: Path)
         (KAFKA, OCCURRENCE, None),
     ]
     assert unread.stdout == (
-        f"[unread] decision active [{KAFKA}]({vault / KAFKA}) - {KAFKA_TITLE}\n"
-        f"[unread] decision superseded [{NEW}]({vault / NEW}) - {OLD_TITLE}\n"
+        f"[unread] 2026-09-02 decision active     [{KAFKA}]({vault / KAFKA}) - {KAFKA_TITLE}\n"
+        f"[unread] 2026-09-01 decision superseded [{NEW}]({vault / NEW}) - {OLD_TITLE}\n"
     )
 
 

@@ -12,14 +12,14 @@ from pathlib import Path
 import click
 
 from notes.cli import get_session, vault_command
-from notes.output import emit, render_link
+from notes.output import emit, render_link, style_label, style_reasons
 from notes.search import RecallItem, RecallResult, recall, recall_as_data
 
 UNREAD_HEADING = "Unread notes:"
 RELATED_HEADING = "Related notes:"
 
 
-@vault_command("recall", offline=True)
+@vault_command("recall", offline=True, short_help="Surface the notes relevant to a prompt")
 @click.argument("query", required=False)
 @click.option(
     "--cwd",
@@ -39,11 +39,12 @@ def render(vault: Path, result: RecallResult) -> str:
     lines: list[str] = []
     for heading, items in ((UNREAD_HEADING, result.unread), (RELATED_HEADING, result.related)):
         if items:
-            lines.append(heading)
+            lines.append(style_label(heading))
             lines.extend(render_line(vault, item) for item in items)
     return "\n".join(lines)
 
 
 def render_line(vault: Path, item: RecallItem) -> str:
     """`- [reasons] [id](abs) - Title`, the reasons comma-separated: `- [issue: ATLAS-27, text, superseded] ...`."""
-    return f"- [{', '.join(item.reasons)}] {render_link(vault, item.path, item.title)}"
+    reasons = style_reasons(f"[{', '.join(item.reasons)}]")
+    return f"- {reasons} {render_link(vault, item.path, item.title)}"

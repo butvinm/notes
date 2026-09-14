@@ -23,7 +23,7 @@ from notes.slug import creation_date_from_path
 from notes.vault import canonical_id, resolve_id
 
 
-@vault_command("move")
+@vault_command("move", short_help="Rename a note and fix the references to it")
 @click.argument("note_id", metavar="ID")
 @click.argument("new_path", metavar="NEW-PATH")
 @click.pass_context

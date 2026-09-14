@@ -13,7 +13,7 @@ from notes.sync import report_as_data
 from notes.vault import require_vault
 
 
-@vault_command("push", offline=True)
+@vault_command("push", offline=True, short_help="Push the vault to its remote")
 @click.pass_context
 def push_command(ctx: click.Context) -> None:
     """Push the vault's commits to the configured remote, setting the upstream on the first push."""
@@ -33,7 +33,7 @@ def push_command(ctx: click.Context) -> None:
     emit(ctx, human, {"remote": remote, "pushed": outcome.pushed, "set_upstream": outcome.set_upstream})
 
 
-@click.command("pull")
+@click.command("pull", short_help="Fast-forward the vault from its remote")
 @json_option
 @click.pass_context
 def pull_command(ctx: click.Context) -> None:

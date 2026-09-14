@@ -90,8 +90,14 @@ def read_line(vault: Path, path: str, title: str | None, phrase: str) -> str:
     return f"read: {link} ({phrase})"
 
 
-def unread_line(vault: Path, path: str, title: str) -> str:
-    return f"[unread] reminder active [{path}]({vault / path}) - {title}"
+PLANTS_DETAIL = "at 2026-09-09 10:00"
+STANDUP_DETAIL = "every 3 days, next 2026-09-05 10:00"
+"""How `notes list` describes the two schedules when the clock is frozen at noon on 2026-09-02."""
+
+
+def unread_line(vault: Path, path: str, title: str, detail: str) -> str:
+    date = path.split("/")[1][:10]
+    return f"[unread] {date} reminder active [{path}]({vault / path}) - {title} ({detail})"
 
 
 # Closing deliveries
@@ -144,7 +150,7 @@ def test_read_closes_a_single_delivery_in_the_singular(runner: CliRunner, vault:
     assert [(path, read_at is not None) for path, _, read_at in read_state(vault)] == [(PLANTS, True)]
 
 
-def test_read_touches_only_the_named_note(runner: CliRunner, vault: Path) -> None:
+def test_read_touches_only_the_named_note(runner: CliRunner, vault: Path, frozen_now: datetime) -> None:
     write(vault, PLANTS, note_text())
     write(vault, STANDUP, note_text(schedule=EVERY_3_DAYS, title=STANDUP_TITLE))
     runner.invoke(cli, ["sync"])
@@ -154,7 +160,7 @@ def test_read_touches_only_the_named_note(runner: CliRunner, vault: Path) -> Non
     read(runner, STANDUP)
     unread = runner.invoke(cli, ["list", "--unread"])
 
-    assert unread.stdout == unread_line(vault, PLANTS, PLANTS_TITLE) + "\n"
+    assert unread.stdout == unread_line(vault, PLANTS, PLANTS_TITLE, PLANTS_DETAIL) + "\n"
     assert [(path, read_at is None) for path, _, read_at in read_state(vault)] == [(STANDUP, False), (PLANTS, True)]
 
 
@@ -175,7 +181,7 @@ def test_after_read_the_note_leaves_list_unread_and_the_recall_block(runner: Cli
     listed = runner.invoke(cli, ["list"])
     shown = json.loads(runner.invoke(cli, ["show", PLANTS, "--json"]).stdout)
 
-    assert before_list.stdout == unread_line(vault, PLANTS, PLANTS_TITLE) + "\n"
+    assert before_list.stdout == unread_line(vault, PLANTS, PLANTS_TITLE, PLANTS_DETAIL) + "\n"
     assert before_recall.stdout.splitlines()[0] == UNREAD
     assert (after_list.exit_code, after_list.stdout) == (0, "")
     assert (after_recall.exit_code, after_recall.stdout) == (0, "")
@@ -183,12 +189,14 @@ def test_after_read_the_note_leaves_list_unread_and_the_recall_block(runner: Cli
         "Related notes:",
         f"- [tag: home, text] [{PLANTS}]({vault / PLANTS}) - {PLANTS_TITLE}",
     ]
-    assert listed.stdout == f"reminder active [{PLANTS}]({vault / PLANTS}) - {PLANTS_TITLE}\n"
+    assert (
+        listed.stdout == f"2026-09-02 reminder active [{PLANTS}]({vault / PLANTS}) - {PLANTS_TITLE} ({PLANTS_DETAIL})\n"
+    )
     assert shown["unread"] == 0
 
 
 def test_the_next_occurrence_makes_a_read_note_unread_again(
-    runner: CliRunner, vault: Path, recorded_commands: RecordedCommands
+    runner: CliRunner, vault: Path, recorded_commands: RecordedCommands, frozen_now: datetime
 ) -> None:
     write(vault, STANDUP, note_text(schedule=EVERY_3_DAYS, title=STANDUP_TITLE))
     tick(runner, ANCHOR)
@@ -202,7 +210,7 @@ def test_the_next_occurrence_makes_a_read_note_unread_again(
 
     assert first.stdout == read_line(vault, STANDUP, STANDUP_TITLE, "closed 1 unread delivery") + "\n"
     assert quiet.stdout == ""
-    assert unread.stdout == unread_line(vault, STANDUP, STANDUP_TITLE) + "\n"
+    assert unread.stdout == unread_line(vault, STANDUP, STANDUP_TITLE, STANDUP_DETAIL) + "\n"
     assert recalled.stdout.splitlines() == [UNREAD, f"- [unread] [{STANDUP}]({vault / STANDUP}) - {STANDUP_TITLE}"]
     assert second.stdout == first.stdout
     assert [(occurrence, read_at is not None) for _, occurrence, read_at in read_state(vault)] == [
@@ -226,7 +234,7 @@ def test_showing_listing_searching_and_recalling_never_mark_a_note_read(runner: 
         assert PLANTS in result.stdout
     unread = runner.invoke(cli, ["list", "--unread"])
 
-    assert unread.stdout == unread_line(vault, PLANTS, PLANTS_TITLE) + "\n"
+    assert unread.stdout == unread_line(vault, PLANTS, PLANTS_TITLE, PLANTS_DETAIL) + "\n"
     assert read_state(vault) == [(PLANTS, SEPTEMBER_9, None)]
 
 

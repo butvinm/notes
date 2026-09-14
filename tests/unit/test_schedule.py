@@ -119,6 +119,46 @@ def test_one_shot_is_due_from_its_timestamp_on() -> None:
     assert schedule.latest_due(one_shot, ANCHOR + timedelta(days=400)) == ANCHOR
 
 
+def test_next_due_of_a_one_shot_is_its_time_until_it_fires() -> None:
+    one_shot = OneShot(ANCHOR)
+
+    assert schedule.next_due(one_shot, ANCHOR - timedelta(seconds=1)) == ANCHOR
+    assert schedule.next_due(one_shot, ANCHOR) is None
+    assert schedule.next_due(one_shot, ANCHOR + timedelta(days=1)) is None
+
+
+def test_next_due_of_a_recurring_schedule_is_the_first_occurrence_after_now() -> None:
+    recurring = Recurring(3, "days", ANCHOR)
+
+    assert schedule.next_due(recurring, ANCHOR - timedelta(minutes=1)) == ANCHOR
+    assert schedule.next_due(recurring, ANCHOR) == ANCHOR + timedelta(days=3)
+    assert schedule.next_due(recurring, ANCHOR + timedelta(days=2, hours=23)) == ANCHOR + timedelta(days=3)
+    assert schedule.next_due(recurring, ANCHOR + timedelta(days=3)) == ANCHOR + timedelta(days=6)
+
+
+def test_next_due_requires_an_aware_now() -> None:
+    with pytest.raises(ValueError, match="now must be timezone-aware"):
+        schedule.next_due(OneShot(ANCHOR), datetime(2026, 9, 2, 12, 0))
+
+
+def test_describe_reads_a_one_shot_in_its_own_offset_to_the_minute() -> None:
+    at = OneShot(datetime(2026, 9, 9, 10, 0, 30, tzinfo=MSK))
+
+    assert schedule.describe(at, ANCHOR) == "at 2026-09-09 10:00"
+    assert schedule.describe(at, ANCHOR + timedelta(days=30)) == "at 2026-09-09 10:00"
+    assert schedule.describe(OneShot(datetime(2026, 9, 9, 7, 0, tzinfo=UTC)), ANCHOR) == "at 2026-09-09 07:00"
+
+
+def test_describe_reads_a_recurring_schedule_with_its_next_occurrence() -> None:
+    every_3_days = Recurring(3, "days", ANCHOR)
+
+    assert schedule.describe(every_3_days, ANCHOR - timedelta(days=1)) == "every 3 days, next 2026-09-02 10:00"
+    assert schedule.describe(every_3_days, ANCHOR + timedelta(hours=2)) == "every 3 days, next 2026-09-05 10:00"
+    assert schedule.describe(Recurring(1, "days", ANCHOR), ANCHOR) == "every day, next 2026-09-03 10:00"
+    assert schedule.describe(Recurring(1, "weeks", ANCHOR), ANCHOR) == "every week, next 2026-09-09 10:00"
+    assert schedule.describe(Recurring(90, "minutes", ANCHOR), ANCHOR) == "every 90 minutes, next 2026-09-02 11:30"
+
+
 def test_recurring_before_the_anchor_is_not_due() -> None:
     assert schedule.latest_due(Recurring(3, "days", ANCHOR), ANCHOR - timedelta(minutes=1)) is None
 

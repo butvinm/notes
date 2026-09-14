@@ -19,7 +19,7 @@ from notes.output import emit
 from notes.vault import resolve_id
 
 
-@vault_command("relate")
+@vault_command("relate", short_help="Link one note to another")
 @click.argument("note_id", metavar="ID")
 @click.argument("relation", metavar="RELATION")
 @click.argument("other_id", metavar="OTHER-ID")

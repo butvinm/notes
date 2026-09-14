@@ -73,8 +73,10 @@ def reasons_by_id(output: str) -> dict[str, str]:
     return dict(zip(ids, reasons, strict=True))
 
 
-def list_line(vault: Path, effective_status: str, path: str, title: str) -> str:
-    return f"decision {effective_status} [{path}]({vault / path}) - {title}"
+def list_line(vault: Path, effective_status: str, path: str, title: str, width: int = 0) -> str:
+    """One `notes list` line; `width` pads the status column when the listing mixes statuses."""
+    date = path.split("/")[1][:10]
+    return f"{date} decision {effective_status.ljust(width)} [{path}]({vault / path}) - {title}"
 
 
 def test_return_to_an_old_decision(runner: CliRunner, vault: Path, git_cmd: Git, tmp_path: Path) -> None:
@@ -87,7 +89,7 @@ def test_return_to_an_old_decision(runner: CliRunner, vault: Path, git_cmd: Git,
     assert superseded.exit_code == 0, superseded.output
     assert superseded.stdout == list_line(vault, "superseded", OLD, OLD_TITLE) + "\n"
     assert runner.invoke(cli, ["list"]).stdout.splitlines() == [
-        list_line(vault, "active", NEW, NEW_TITLE),
+        list_line(vault, "active", NEW, NEW_TITLE, width=len("superseded")),
         list_line(vault, "superseded", OLD, OLD_TITLE),
     ]
 

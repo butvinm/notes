@@ -88,9 +88,10 @@ def head(git_cmd: Git, repo: Path) -> str:
     return git_cmd(repo, "rev-parse", "HEAD").strip()
 
 
-def line(vault: Path, kind: str, effective_status: str, path: str, title: str) -> str:
-    """One `notes list` line as printed."""
-    return f"{kind} {effective_status} [{path}]({vault / path}) - {title}"
+def line(vault: Path, kind: str, effective_status: str, path: str, title: str, width: int = 0) -> str:
+    """One `notes list` line as printed; `width` pads the kind column when the listing mixes kinds."""
+    date = path.split("/")[1][:10]
+    return f"{date} {kind.ljust(width)} {effective_status} [{path}]({vault / path}) - {title}"
 
 
 def test_work_manually_without_an_agent(runner: CliRunner, home: Path, git_cmd: Git, tmp_path: Path) -> None:
@@ -116,7 +117,7 @@ def test_work_manually_without_an_agent(runner: CliRunner, home: Path, git_cmd: 
     offline = runner.invoke(cli, ["list"])
     assert offline.exit_code == 0, offline.output
     assert offline.stdout.splitlines() == [
-        line(vault, "fact", "active", PROXY, PROXY_TITLE),
+        line(vault, "fact", "active", PROXY, PROXY_TITLE, width=len("decision")),
         line(vault, "decision", "active", KAFKA, KAFKA_TITLE),
     ]
     assert offline.stderr.startswith("warning: push to origin failed: ")
@@ -160,7 +161,7 @@ def test_an_invalid_file_stays_out_of_the_index_and_out_of_git_until_it_is_fixed
     searched_again = runner.invoke(cli, ["search", "standup"])
 
     assert listed_again.stdout.splitlines() == [
-        line(vault, "fact", "active", STANDUP, STANDUP_TITLE),
+        line(vault, "fact", "active", STANDUP, STANDUP_TITLE, width=len("decision")),
         line(vault, "decision", "active", KAFKA, KAFKA_TITLE),
     ]
     assert checked_again.output == "ok: 2 notes indexed, no invalid files\n"
@@ -185,7 +186,7 @@ def test_a_deleted_index_is_rebuilt_from_the_markdown_without_a_commit(
 
     assert listed.exit_code == 0, listed.output
     assert listed.stdout.splitlines() == [
-        line(vault, "fact", "active", PROXY, PROXY_TITLE),
+        line(vault, "fact", "active", PROXY, PROXY_TITLE, width=len("decision")),
         line(vault, "decision", "active", KAFKA, KAFKA_TITLE),
     ]
     assert listed.stderr == ""

@@ -121,6 +121,35 @@ def latest_due(schedule: Schedule, now: datetime) -> datetime | None:
     return schedule.anchor + elapsed * schedule.period
 
 
+def next_due(schedule: Schedule, now: datetime) -> datetime | None:
+    """The first occurrence after `now`, or None for a one-shot schedule that has already fired."""
+    _require_aware(now, "now")
+    if isinstance(schedule, OneShot):
+        return schedule.at if schedule.at > now else None
+    if now < schedule.anchor:
+        return schedule.anchor
+    elapsed = (now - schedule.anchor) // schedule.period
+    return schedule.anchor + (elapsed + 1) * schedule.period
+
+
+def describe(schedule: Schedule, now: datetime) -> str:
+    """The schedule as a person reads it in a listing: `at 2026-09-09 10:00` or `every 3 days, next 2026-09-05 10:00`.
+
+    Times are shown to the minute in the offset the schedule was written in, without the offset itself. A period of
+    one unit reads `every day`, not `every 1 days`.
+    """
+    if isinstance(schedule, OneShot):
+        return f"at {_clock_text(schedule.at)}"
+    period = schedule.unit[:-1] if schedule.every == 1 else f"{schedule.every} {schedule.unit}"
+    upcoming = next_due(schedule, now)
+    assert upcoming is not None  # a recurring schedule always has a next occurrence
+    return f"every {period}, next {_clock_text(upcoming)}"
+
+
+def _clock_text(value: datetime) -> str:
+    return value.strftime("%Y-%m-%d %H:%M")
+
+
 def normalize_input(text: str, now: datetime, tz: tzinfo | None = None) -> str:
     """Canonical text for what a person typed: canonical or leniently written grammar, or one of the relative forms.
 

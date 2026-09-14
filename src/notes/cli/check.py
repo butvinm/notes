@@ -10,7 +10,7 @@ from notes.output import emit, json_enabled
 from notes.sync import error_lines, invalid_as_data
 
 
-@vault_command("check")
+@vault_command("check", short_help="Validate every note")
 @click.pass_context
 def check_command(ctx: click.Context) -> None:
     """Validate every note and list the invalid files with line numbers; exit 1 when any file is invalid."""

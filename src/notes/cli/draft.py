@@ -21,24 +21,24 @@ import click
 from ruamel.yaml.comments import CommentedMap
 
 from notes import clock, deliveries, document, drafts, generator
-from notes.cli import get_session, vault_command
+from notes.cli import SectionedGroup, get_session, vault_command
 from notes.cli.edit import as_data, fail_invalid, invalid_of, note_title, render
 from notes.document import ValidationError
 from notes.drafts import Draft
 from notes.errors import UsageError, ValidationFailed
-from notes.output import emit, json_enabled
+from notes.output import emit, json_enabled, render_ref
 from notes.prompts import require_kind
 from notes.slug import create_dated_note, dated_filename
 from notes.sync import InvalidFile, error_lines
 from notes.vault import known_kinds
 
 
-@click.group("draft")
+@click.group("draft", cls=SectionedGroup, short_help="Draft notes with the generator")
 def draft_group() -> None:
     """Draft notes with the configured generator and keep them until they are saved or discarded."""
 
 
-@vault_command("create")
+@vault_command("create", short_help="Draft a note from a context packet on stdin")
 @click.argument("kind")
 @click.pass_context
 def create_command(ctx: click.Context, kind: str) -> None:
@@ -52,7 +52,7 @@ def create_command(ctx: click.Context, kind: str) -> None:
     emit(ctx, render_draft(session.vault, draft), draft_as_data(session.vault, draft))
 
 
-@vault_command("list")
+@vault_command("list", short_help="List the stored drafts")
 @click.pass_context
 def list_command(ctx: click.Context) -> None:
     """List the stored drafts, one line each, oldest first."""
@@ -62,7 +62,7 @@ def list_command(ctx: click.Context) -> None:
     emit(ctx, human, [draft_as_data(session.vault, draft) for draft in found])
 
 
-@vault_command("show")
+@vault_command("show", short_help="Print a draft")
 @click.argument("draft_id", metavar="DRAFT-ID")
 @click.pass_context
 def show_command(ctx: click.Context, draft_id: str) -> None:
@@ -77,7 +77,7 @@ def show_command(ctx: click.Context, draft_id: str) -> None:
     emit(ctx, "", draft_as_data(session.vault, draft) | {"markdown": markdown, "context": context})
 
 
-@vault_command("revise")
+@vault_command("revise", short_help="Run the generator again with feedback")
 @click.argument("draft_id", metavar="DRAFT-ID")
 @click.argument("feedback", required=False)
 @click.pass_context
@@ -103,7 +103,7 @@ def revise_command(ctx: click.Context, draft_id: str, feedback: str | None) -> N
     emit(ctx, render_draft(session.vault, draft), draft_as_data(session.vault, draft))
 
 
-@vault_command("save")
+@vault_command("save", short_help="Save a draft as a note")
 @click.argument("draft_id", metavar="DRAFT-ID")
 @click.option(
     "--name",
@@ -147,7 +147,7 @@ def save_command(ctx: click.Context, draft_id: str, short_name: str | None) -> N
         fail_invalid(ctx, vault, invalid)
 
 
-@vault_command("discard")
+@vault_command("discard", short_help="Delete a draft")
 @click.argument("draft_id", metavar="DRAFT-ID")
 @click.pass_context
 def discard_command(ctx: click.Context, draft_id: str) -> None:
@@ -239,7 +239,7 @@ def fail_draft(ctx: click.Context, vault: Path, draft: Draft, errors: list[Valid
 
 def render_draft(vault: Path, draft: Draft) -> str:
     """`[draft-id](abs draft.md) - short name`: the shape of a note link, pointing at the draft's Markdown."""
-    return f"[{draft.id}]({drafts.markdown_path(vault, draft.id)}) - {draft.short_name}"
+    return render_ref(drafts.markdown_path(vault, draft.id), draft.id, draft.short_name)
 
 
 def draft_as_data(vault: Path, draft: Draft) -> dict[str, Any]:

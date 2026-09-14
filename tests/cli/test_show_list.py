@@ -6,8 +6,10 @@ rows into `deliveries` directly, since `notes tick` arrives in a later task.
 
 import json
 from collections.abc import Callable, Sequence
+from datetime import datetime
 from pathlib import Path
 
+import click
 import pytest
 from click.testing import CliRunner
 
@@ -194,13 +196,49 @@ def test_list_orders_newest_first_then_by_path(runner: CliRunner, vault: Path, c
 
     assert result.exit_code == 0, result.output
     assert result.stdout.splitlines() == [
-        f"decision active [{KAFKA}]({vault / KAFKA}) - Project Atlas task updates over Kafka",
-        f"reminder active [{PLANTS}]({vault / PLANTS}) - Water the plants",
-        f"decision superseded [{OLD}]({vault / OLD}) - Kafka over WebSocket",
-        f"fact archived [{LEGACY}]({vault / LEGACY}) - Legacy fact",
-        f"idea active [{IDEA}]({vault / IDEA}) - An idea",
+        f"2026-09-02 decision active     [{KAFKA}]({vault / KAFKA}) - Project Atlas task updates over Kafka",
+        f"2026-09-02 reminder active     [{PLANTS}]({vault / PLANTS}) - Water the plants (at 2026-09-09 10:00)",
+        f"2026-09-01 decision superseded [{OLD}]({vault / OLD}) - Kafka over WebSocket",
+        f"2026-08-30 fact     archived   [{LEGACY}]({vault / LEGACY}) - Legacy fact",
+        f"2026-08-15 idea     active     [{IDEA}]({vault / IDEA}) - An idea",
     ]
     assert result.stderr == ""
+
+
+def test_list_columns_are_padded_only_to_the_listing(runner: CliRunner, vault: Path, corpus: dict[str, str]) -> None:
+    """A listing of one kind and one status carries no padding: the widths come from the rows shown, not all kinds."""
+    result = runner.invoke(cli, ["list", "--kind", "decision", "--status", "active"])
+
+    assert result.exit_code == 0, result.output
+    assert result.stdout == (
+        f"2026-09-02 decision active [{KAFKA}]({vault / KAFKA}) - Project Atlas task updates over Kafka\n"
+    )
+
+
+def test_list_colours_the_columns_on_a_terminal(
+    runner: CliRunner, vault: Path, corpus: dict[str, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    deliver(vault, OLD, "2026-09-01T09:00:00+03:00")
+    monkeypatch.setenv("FORCE_COLOR", "1")
+
+    coloured = runner.invoke(cli, ["list"], color=True)
+    monkeypatch.setenv("NO_COLOR", "1")
+    plain = runner.invoke(cli, ["list"], color=True)
+
+    assert coloured.exit_code == 0, coloured.output
+    first = coloured.stdout.splitlines()[0]
+    assert click.style("[unread]", fg="yellow", bold=True) in first
+    assert click.style("decision", fg="cyan") in first
+    assert click.style("superseded", fg="magenta") in first
+    assert click.style("Kafka over WebSocket", bold=True) in first
+    assert f"\x1b]8;;{(vault / OLD).as_uri()}\x1b\\" in first
+    assert f"[{OLD}]({vault / OLD})" not in first
+    visible = click.unstyle(first).replace("\x1b]8;;\x1b\\", "").replace(f"\x1b]8;;{(vault / OLD).as_uri()}\x1b\\", "")
+    assert visible == f"[unread] 2026-09-01 decision superseded Kafka over WebSocket  {OLD}"
+    assert plain.stdout.splitlines()[0] == (
+        f"[unread] 2026-09-01 decision superseded [{OLD}]({vault / OLD}) - Kafka over WebSocket"
+    )
+    assert "\x1b" not in plain.stdout
 
 
 def test_list_puts_unread_notes_first(runner: CliRunner, vault: Path, corpus: dict[str, str]) -> None:
@@ -213,8 +251,9 @@ def test_list_puts_unread_notes_first(runner: CliRunner, vault: Path, corpus: di
     assert result.exit_code == 0, result.output
     lines = result.stdout.splitlines()
     assert listed_paths(result.stdout) == [OLD, IDEA, KAFKA, PLANTS, LEGACY]
-    assert lines[0] == f"[unread] decision superseded [{OLD}]({vault / OLD}) - Kafka over WebSocket"
-    assert lines[1] == f"[unread] idea active [{IDEA}]({vault / IDEA}) - An idea"
+    assert lines[0] == f"[unread] 2026-09-01 decision superseded [{OLD}]({vault / OLD}) - Kafka over WebSocket"
+    assert lines[1] == f"[unread] 2026-08-15 idea     active     [{IDEA}]({vault / IDEA}) - An idea"
+    assert lines[2].startswith(f"         2026-09-02 decision active     [{KAFKA}]({vault / KAFKA}) - ")
     assert "[unread]" not in "\n".join(lines[2:])
 
 
@@ -263,7 +302,7 @@ def test_list_syncs_and_commits_a_hand_written_note_first(
     result = runner.invoke(cli, ["list", "--tag", "fresh"])
 
     assert result.exit_code == 0, result.output
-    assert result.stdout == f"idea active [{fresh}]({vault / fresh}) - Fresh\n"
+    assert result.stdout == f"2026-09-03 idea active [{fresh}]({vault / fresh}) - Fresh\n"
     assert git_cmd(vault, "log", "--format=%s", "-1").strip() == f"notes: update {fresh}"
     assert git_cmd(vault, "status", "--porcelain").splitlines() == [f"?? {bad}"]
 
@@ -278,7 +317,27 @@ def test_list_unread_filter(runner: CliRunner, vault: Path, corpus: dict[str, st
     result = runner.invoke(cli, ["list", "--unread"])
 
     assert result.exit_code == 0, result.output
-    assert result.stdout == f"[unread] reminder active [{PLANTS}]({vault / PLANTS}) - Water the plants\n"
+    assert result.stdout == (
+        f"[unread] 2026-09-02 reminder active [{PLANTS}]({vault / PLANTS}) - Water the plants (at 2026-09-09 10:00)\n"
+    )
+
+
+def test_list_describes_a_recurring_schedule_with_its_next_occurrence(
+    runner: CliRunner, vault: Path, frozen_now: datetime
+) -> None:
+    """At noon on 2026-09-02, a standup every 3 days from 10:00 that day is next due on the 5th."""
+    standup = write(
+        vault,
+        "2026-09-01-standup.md",
+        note_text("Standup", kind="reminder", schedule="every 3 days from 2026-09-02T10:00:00+03:00"),
+    )
+
+    result = runner.invoke(cli, ["list"])
+
+    assert result.exit_code == 0, result.output
+    assert result.stdout == (
+        f"2026-09-01 reminder active [{standup}]({vault / standup}) - Standup (every 3 days, next 2026-09-05 10:00)\n"
+    )
 
 
 def test_list_kind_filter(runner: CliRunner, vault: Path, corpus: dict[str, str]) -> None:

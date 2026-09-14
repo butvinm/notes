@@ -134,7 +134,7 @@ def test_supersedes_gives_the_target_the_superseded_status_without_touching_it(
     shown_kafka = json.loads(runner.invoke(cli, ["show", KAFKA, "--json"]).stdout)
 
     assert listed.exit_code == 0, listed.output
-    assert listed.stdout == f"decision superseded [{OLD}]({vault / OLD}) - {OLD_TITLE}\n"
+    assert listed.stdout == f"2026-09-01 decision superseded [{OLD}]({vault / OLD}) - {OLD_TITLE}\n"
     assert (shown_old["status"], shown_old["effective_status"], shown_old["related"]) == ("active", "superseded", [])
     assert shown_kafka["related"] == [{"relation": "supersedes", "note": OLD}]
     assert read(vault, OLD) == OLD_TEXT

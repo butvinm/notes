@@ -90,7 +90,9 @@ def unread_recall(vault: Path, path: str) -> list[str]:
 
 
 def unread_list(vault: Path, path: str) -> str:
-    return f"[unread] reminder active [{path}]({vault / path}) - {TITLE}\n"
+    """The standup in `notes list --unread` with the clock frozen at noon on 2026-09-02: next due on the 5th."""
+    detail = "every 3 days, next 2026-09-05 10:00"
+    return f"[unread] 2026-09-02 reminder active [{path}]({vault / path}) - {TITLE} ({detail})\n"
 
 
 def read_line(vault: Path, path: str, phrase: str) -> str:
@@ -173,7 +175,7 @@ def test_receive_a_reminder(
 
 
 def test_unread_state_follows_a_move_and_a_rebuilt_index_delivers_the_current_occurrence_once(
-    runner: CliRunner, vault: Path, git_cmd: Git, desktop: RecordedCommands
+    runner: CliRunner, vault: Path, git_cmd: Git, desktop: RecordedCommands, frozen_now: datetime
 ) -> None:
     write(vault, STANDUP, STANDUP_TEXT)
     assert runner.invoke(cli, ["sync"]).exit_code == 0

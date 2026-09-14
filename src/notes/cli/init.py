@@ -16,7 +16,7 @@ from notes.systemd import TIMER_NAME
 from notes.vault import root
 
 
-@click.command("init")
+@click.command("init", short_help="Create the vault, or clone it from a remote")
 @click.option("--remote", metavar="URL", help="Git remote to push to, or to clone when it already holds a vault.")
 @click.option(
     "--auto-push",

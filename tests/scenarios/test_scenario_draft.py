@@ -132,7 +132,7 @@ def test_a_decision_through_the_draft_flow(
     assert runner.invoke(cli, ["draft", "list"]).stdout == ""
 
     # The saved note is a regular note from here on.
-    assert runner.invoke(cli, ["list"]).stdout == f"decision active [{NOTE}]({vault / NOTE}) - {TITLE}\n"
+    assert runner.invoke(cli, ["list"]).stdout == f"2026-09-02 decision active [{NOTE}]({vault / NOTE}) - {TITLE}\n"
     assert runner.invoke(cli, ["search", "ATLAS-27"]).stdout == (
         f"[issue: ATLAS-27, text] [{NOTE}]({vault / NOTE}) - {TITLE}\n"
     )

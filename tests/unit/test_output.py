@@ -28,6 +28,104 @@ def test_render_link_keeps_unicode() -> None:
     assert link == "[notes/2026-09-02-задачи.md](/h/.notes/notes/2026-09-02-задачи.md) - Обновления задач"
 
 
+# Colour
+
+
+def test_colour_follows_no_color_force_color_then_the_terminal(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.delenv("FORCE_COLOR", raising=False)
+    monkeypatch.setattr("sys.stdout", io.StringIO())
+    assert output.colors_enabled() is False
+
+    monkeypatch.setenv("FORCE_COLOR", "1")
+    assert output.colors_enabled() is True
+
+    monkeypatch.setenv("NO_COLOR", "1")
+    assert output.colors_enabled() is False
+
+
+def test_style_helpers_are_plain_without_colour(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("NO_COLOR", "1")
+
+    assert output.style("x", fg="red") == "x"
+    assert output.style_kind("idea") == "idea"
+    assert output.style_status("active") == "active"
+    assert output.style_unread("[unread]") == "[unread]"
+    assert output.style_reasons("[text]") == "[text]"
+    assert output.style_label("delivered:") == "delivered:"
+    assert output.render_link(Path("/h"), "notes/a.md", "T") == "[notes/a.md](/h/notes/a.md) - T"
+
+
+def test_style_helpers_colour_each_field_under_force_color(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setenv("FORCE_COLOR", "1")
+
+    assert output.style_kind("idea") == click.style("idea", fg="cyan")
+    assert output.style_status("active") == click.style("active", fg="green")
+    assert output.style_status("archived  ") == click.style("archived  ", fg="bright_black")
+    assert output.style_status("superseded") == click.style("superseded", fg="magenta")
+    assert output.style_status("unknown") == "unknown"
+    assert output.style_unread("[unread]") == click.style("[unread]", fg="yellow", bold=True)
+    assert output.style_reasons("[text]") == click.style("[text]", fg="blue")
+    assert output.style_label("delivered:") == click.style("delivered:", fg="green", bold=True)
+
+
+def test_render_link_on_a_terminal_is_title_then_dim_id_hyperlinked_to_the_file(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The path is carried by an OSC 8 hyperlink rather than printed, so the line stays short and the title leads."""
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setenv("FORCE_COLOR", "1")
+
+    link = output.render_link(Path("/h/.notes"), "notes/2026-09-02-задачи.md", "Обновления задач")
+
+    uri = "file:///h/.notes/notes/2026-09-02-%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%D0%B8.md"
+    assert link == (
+        f"\x1b]8;;{uri}\x1b\\{click.style('Обновления задач', bold=True)}\x1b]8;;\x1b\\"
+        f"  \x1b]8;;{uri}\x1b\\{click.style('notes/2026-09-02-задачи.md', fg='bright_black')}\x1b]8;;\x1b\\"
+    )
+    assert "/h/.notes/notes/2026-09-02-задачи.md" not in link
+
+
+def test_render_link_appends_the_detail_after_the_title(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("NO_COLOR", "1")
+    plain = output.render_link(Path("/h"), "notes/a.md", "T", "at 2026-09-09 10:00")
+    monkeypatch.delenv("NO_COLOR")
+    monkeypatch.setenv("FORCE_COLOR", "1")
+    coloured = output.render_link(Path("/h"), "notes/a.md", "T", "at 2026-09-09 10:00")
+
+    assert plain == "[notes/a.md](/h/notes/a.md) - T (at 2026-09-09 10:00)"
+    assert coloured == (
+        f"\x1b]8;;file:///h/notes/a.md\x1b\\{click.style('T', bold=True)}\x1b]8;;\x1b\\"
+        f" ({click.style('at 2026-09-09 10:00', fg='yellow')})"
+        f"  \x1b]8;;file:///h/notes/a.md\x1b\\{click.style('notes/a.md', fg='bright_black')}\x1b]8;;\x1b\\"
+    )
+
+
+def test_render_ref_takes_any_file_and_label(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A draft is referenced by its ID and its Markdown path, the same shape as a note."""
+    monkeypatch.setenv("NO_COLOR", "1")
+
+    ref = output.render_ref(Path("/h/.notes/drafts/20260902-120000-fact/draft.md"), "20260902-120000-fact", "porter")
+
+    assert ref == "[20260902-120000-fact](/h/.notes/drafts/20260902-120000-fact/draft.md) - porter"
+
+
+def test_hyperlink_wraps_the_text_in_osc_8() -> None:
+    assert output.hyperlink("x", "file:///a") == "\x1b]8;;file:///a\x1b\\x\x1b]8;;\x1b\\"
+
+
+def test_emit_keeps_the_colour_under_force_color_even_off_a_terminal(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    monkeypatch.setenv("FORCE_COLOR", "1")
+
+    output.emit(context(False), output.style_kind("idea"), {})
+
+    assert capsys.readouterr().out == click.style("idea", fg="cyan") + "\n"
+
+
 def test_emit_prints_human_text_by_default(capsys: pytest.CaptureFixture[str]) -> None:
     output.emit(context(False), "hello", {"greeting": "hello"})
 
