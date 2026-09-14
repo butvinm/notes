@@ -10,12 +10,10 @@ from notes.document import ValidationError
 from notes.vault import is_vault, known_kinds
 from tests.conftest import BANNED_GLYPHS
 
-KINDS = ("decision", "event", "fact", "idea", "promise", "reminder")
+KINDS = ("decision", "fact", "idea", "reminder")
 SECTIONS = {
     "decision": ("**Decision:**", "**Rationale:**"),
     "fact": ("**Fact:**", "**Source:**", "**Context:**"),
-    "promise": ("**Promise:**", "**Owner:**", "**Due:**"),
-    "event": ("**What happened:**", "**When:**", "**Consequences:**"),
     "reminder": ("**Remind me:**", "**Why:**"),
     "idea": ("**Idea:**", "**Why it might matter:**", "**Open questions:**"),
 }

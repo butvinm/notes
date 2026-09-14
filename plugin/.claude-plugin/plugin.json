@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "notes",
-  "description": "Personal notes vault for Claude Code: a hook that surfaces unread reminders and relevant notes on every prompt, and skills that capture decisions, facts, events, promises, and reminders as drafts the user confirms before they are saved. Requires the `notes` CLI and an initialized vault at ~/.notes.",
+  "description": "Personal notes vault for Claude Code: a hook that surfaces unread reminders and relevant notes on every prompt, and one skill per note kind - fact, idea, decision, reminder - that drafts a note for the user to confirm before it is saved. Requires the `notes` CLI and an initialized vault at ~/.notes.",
   "version": "0.1.0",
   "author": { "name": "Mikhail Butvin", "email": "butvin.mikhail@gmail.com" },
   "homepage": "https://github.com/butvinm/notes",

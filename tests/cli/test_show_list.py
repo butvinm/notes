@@ -257,13 +257,13 @@ def test_list_json(runner: CliRunner, vault: Path, corpus: dict[str, str]) -> No
 def test_list_syncs_and_commits_a_hand_written_note_first(
     runner: CliRunner, vault: Path, git_cmd: Git, corpus: dict[str, str]
 ) -> None:
-    fresh = write(vault, "2026-09-03-fresh.md", note_text("Fresh", kind="event"))
+    fresh = write(vault, "2026-09-03-fresh.md", note_text("Fresh", kind="idea", tags=["fresh"]))
     bad = write(vault, "2026-09-03-bad.md", NO_KIND)
 
-    result = runner.invoke(cli, ["list", "--kind", "event"])
+    result = runner.invoke(cli, ["list", "--tag", "fresh"])
 
     assert result.exit_code == 0, result.output
-    assert result.stdout == f"event active [{fresh}]({vault / fresh}) - Fresh\n"
+    assert result.stdout == f"idea active [{fresh}]({vault / fresh}) - Fresh\n"
     assert git_cmd(vault, "log", "--format=%s", "-1").strip() == f"notes: update {fresh}"
     assert git_cmd(vault, "status", "--porcelain").splitlines() == [f"?? {bad}"]
 
@@ -292,9 +292,7 @@ def test_list_unknown_kind_fails(runner: CliRunner, vault: Path, corpus: dict[st
     result = runner.invoke(cli, ["list", "--kind", "recipe"])
 
     assert result.exit_code == 1
-    assert result.stderr == (
-        "Error: unknown kind `recipe` (known kinds: decision, event, fact, idea, promise, reminder)\n"
-    )
+    assert result.stderr == ("Error: unknown kind `recipe` (known kinds: decision, fact, idea, reminder)\n")
 
 
 @pytest.mark.parametrize(

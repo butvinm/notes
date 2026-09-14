@@ -18,7 +18,7 @@ from notes.vault import is_vault
 from tests.conftest import RecordedCommands, indexed_paths
 
 Git = Callable[..., str]
-KINDS = ("decision", "event", "fact", "idea", "promise", "reminder")
+KINDS = ("decision", "fact", "idea", "reminder")
 SYSTEMCTL = ("systemctl", "--user")
 NOTE = "---\nkind: decision\nstatus: active\n---\n\n# From the first device\n"
 NO_KIND = "---\nstatus: active\n---\n\n# No kind\n"

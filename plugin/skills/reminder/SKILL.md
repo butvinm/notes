@@ -1,6 +1,6 @@
 ---
 name: reminder
-description: Create a reminder note in the personal vault at ~/.notes that fires as a desktop notification at a moment or on a rhythm - the action, the reason, and a schedule in canonical or relative form - drafted by the notes CLI and saved only after the user confirms. Invoke on "remind me", "ping me", "don't let me forget", "in three days check", "every week", or any request to be told something later.
+description: Create a reminder note in the personal vault at ~/.notes that fires as a desktop notification at a moment or on a rhythm - the action, the reason, and a schedule in canonical or relative form - drafted by the notes CLI and saved only after the user confirms. Invoke on "remind me", "ping me", "don't let me forget", "every week", "I promised", "I owe", "due Friday", or any request to be told something later.
 ---
 
 # Reminder
@@ -9,7 +9,7 @@ Create a `reminder` note in the vault at `~/.notes`, through the `notes` CLI: th
 
 ## Procedure
 
-1. The kind is `reminder`. A commitment with a due date owed to someone is a `promise` instead: use `/notes:capture`.
+1. The kind is `reminder`, for a nudge to yourself and for a commitment owed to or by someone alike. For a commitment, name the person and the deliverable in the action, tag the person, and use a single moment: a due date never repeats.
 2. **Settle the schedule**, always. Derive it from the request in one of the forms the CLI accepts, in the user's local time:
    - canonical: `at 2026-09-09T10:00:00+03:00` for one moment, `every 3 days from 2026-09-02T10:00:00+03:00` for a rhythm (units `minutes`, `hours`, `days`, `weeks`)
    - relative: `in 3 days`, `in a week`, `tomorrow 09:00`, `today 18:00`, `2026-10-01 10:00`, `every 2 weeks`

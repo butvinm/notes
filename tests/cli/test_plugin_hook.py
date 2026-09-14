@@ -23,8 +23,8 @@ MARKETPLACE = REPOSITORY / ".claude-plugin" / "marketplace.json"
 MANIFEST = PLUGIN_DIR / ".claude-plugin" / "plugin.json"
 HOOKS = PLUGIN_DIR / "hooks" / "hooks.json"
 RECALL_SH = PLUGIN_DIR / "hooks" / "recall.sh"
-SKILLS = ("capture", "decision", "reminder", "recall")
-DRAFTING_SKILLS = ("capture", "decision", "reminder")
+SKILLS = ("decision", "fact", "idea", "note", "recall", "reminder")
+DRAFTING_SKILLS = ("decision", "fact", "idea", "note", "reminder")
 
 UNREAD = "Unread notes:"
 RELATED = "Related notes:"
@@ -327,13 +327,32 @@ def test_drafting_skill_follows_the_shared_procedure(skill: str) -> None:
         assert step in body, f"{skill}: {step}"
 
 
-def test_capture_skill_picks_the_kind() -> None:
-    _, body = split_frontmatter(skill_text("capture"))
+@pytest.mark.parametrize(
+    ("skill", "siblings"),
+    [
+        ("fact", ("/notes:decision", "/notes:idea", "/notes:reminder")),
+        ("idea", ("/notes:decision", "/notes:fact", "/notes:reminder")),
+    ],
+)
+def test_kind_skill_fixes_its_kind_and_hands_the_others_over(skill: str, siblings: tuple[str, ...]) -> None:
+    """Every kind skill names its own kind and points at the skills of the kinds it competes with."""
+    _, body = split_frontmatter(skill_text(skill))
 
-    for mention in ("`fact`", "`event`", "`promise`", "`idea`", "/notes:decision", "/notes:reminder"):
-        assert mention in body, mention
-    assert "the default for a statement" in body
-    assert "the default for an outcome or an incident" in body
+    assert f"The kind is `{skill}`" in body
+    assert f"notes prompt {skill}" in body
+    assert f"notes draft create {skill} --json" in body
+    for sibling in siblings:
+        assert sibling in body, sibling
+
+
+def test_note_skill_settles_the_kind_from_the_vault() -> None:
+    _, body = split_frontmatter(skill_text("note"))
+
+    assert "ls ~/.notes/types/" in body
+    assert "notes prompt <kind>" in body
+    assert "notes draft create <kind> --json" in body
+    for sibling in ("/notes:fact", "/notes:idea", "/notes:decision", "/notes:reminder"):
+        assert sibling in body, sibling
 
 
 def test_decision_skill_fixes_the_kind_and_offers_supersedes() -> None:
@@ -380,8 +399,10 @@ def test_plugin_files_use_plain_punctuation() -> None:
         ".claude-plugin/plugin.json",
         "hooks/hooks.json",
         "hooks/recall.sh",
-        "skills/capture/SKILL.md",
         "skills/decision/SKILL.md",
+        "skills/fact/SKILL.md",
+        "skills/idea/SKILL.md",
+        "skills/note/SKILL.md",
         "skills/recall/SKILL.md",
         "skills/reminder/SKILL.md",
     ]

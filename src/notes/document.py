@@ -34,7 +34,7 @@ FENCE = "---"
 STATUSES = ("active", "archived")
 RELATIONS = ("supersedes", "child", "related")
 LIST_FIELDS = ("paths", "tags", "keywords", "references")
-SCHEDULE_REQUIRED_KINDS = ("reminder", "promise")
+SCHEDULE_REQUIRED_KINDS = ("reminder",)
 
 # Lines of the file taken by the opening fence: YAML line 0 is file line 2.
 _YAML_LINE_OFFSET = 2
@@ -173,8 +173,7 @@ def validate(document: Document, known_kinds: Collection[str], vault: Path) -> l
     """Every problem that makes the document an invalid note, ordered by line; an empty list means valid.
 
     Relation targets are checked against the files in `vault`, which is why validity can change when other files do.
-    A schedule must follow the canonical grammar of `notes.schedule`, `reminder` and `promise` must have one,
-    and a `promise` needs the one-shot `at` form because the schedule is its due date.
+    A schedule must follow the canonical grammar of `notes.schedule`, and a `reminder` must have one.
     """
     errors = list(document.problems)
     errors.extend(_filename_errors(document.path))
@@ -493,14 +492,12 @@ def _string_list_errors(frontmatter: CommentedMap, field: str) -> list[Validatio
     return errors
 
 
-def schedule_problem(kind: Any, text: str) -> str | None:
-    """Why `text` is not an acceptable schedule for a note of `kind`: the grammar, or the one-shot rule of a promise."""
+def schedule_problem(text: str) -> str | None:
+    """Why `text` is not an acceptable schedule: the canonical grammar rejects it."""
     try:
-        parsed = schedules.parse(text)
+        schedules.parse(text)
     except ValueError as error:
         return f"schedule: {error}"
-    if kind == "promise" and isinstance(parsed, schedules.Recurring):
-        return "a promise needs a one-shot `at <timestamp>` schedule, its due date"
     return None
 
 
@@ -514,7 +511,7 @@ def _schedule_errors(frontmatter: CommentedMap) -> list[ValidationError]:
         return []
     if not isinstance(value, str) or not value.strip():
         return [ValidationError(line, "schedule must be a non-empty string")]
-    problem = schedule_problem(kind, value)
+    problem = schedule_problem(value)
     return [ValidationError(line, problem)] if problem is not None else []
 
 

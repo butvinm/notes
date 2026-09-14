@@ -37,7 +37,7 @@ CORPUS_TAGS = [
     "team",
     "поиск",
 ]
-KINDS = ["decision", "event", "fact", "idea", "promise", "reminder"]
+KINDS = ["decision", "fact", "idea", "reminder"]
 
 
 def listing(items: list[str]) -> str:

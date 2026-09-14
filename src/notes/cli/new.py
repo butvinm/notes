@@ -1,7 +1,7 @@
 """`notes new <kind> [<title>] [--name]`: scaffold a note from the kind template, open it in the editor, commit it.
 
 In a terminal the command asks for what the arguments left open (the title, the short name behind the filename,
-the schedule of a reminder or promise) and opens the editor. Outside a terminal, or under `--json`, it takes the
+the schedule of a reminder) and opens the editor. Outside a terminal, or under `--json`, it takes the
 title from the argument, the suggested short name silently, no schedule, and skips the editor, so a script gets the
 bare scaffold. From there on it is `notes edit`'s flow: normalize a relative schedule, sync, commit, report.
 """
@@ -87,7 +87,7 @@ def ask_schedule(kind: str, now: datetime, prompts: bool) -> str | None:
             canonical = schedules.normalize_input(text, now)
         except ValueError as error:
             raise click.UsageError(str(error)) from None
-        problem = document.schedule_problem(kind, canonical)
+        problem = document.schedule_problem(canonical)
         if problem is not None:
             raise click.UsageError(problem)
         return canonical
