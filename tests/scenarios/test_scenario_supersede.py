@@ -75,7 +75,8 @@ def reasons_by_id(output: str) -> dict[str, str]:
 
 def list_line(vault: Path, effective_status: str, path: str, title: str, width: int = 0) -> str:
     """One `notes list` line; `width` pads the status column when the listing mixes statuses."""
-    return f"decision {effective_status.ljust(width)} [{path}]({vault / path}) - {title}"
+    date = path.split("/")[1][:10]
+    return f"{date} decision {effective_status.ljust(width)} [{path}]({vault / path}) - {title}"
 
 
 def test_return_to_an_old_decision(runner: CliRunner, vault: Path, git_cmd: Git, tmp_path: Path) -> None:

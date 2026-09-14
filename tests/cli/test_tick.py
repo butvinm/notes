@@ -180,7 +180,9 @@ def test_several_due_notes_each_get_a_notification_and_a_sound_in_path_order(
     assert desktop_calls(desktop) == [(*NOTIFY, STANDUP_TITLE, STANDUP), SOUND, (*NOTIFY, PLANTS_TITLE, PLANTS), SOUND]
 
 
-def test_the_next_occurrence_makes_a_read_note_unread_again(runner: CliRunner, vault: Path) -> None:
+def test_the_next_occurrence_makes_a_read_note_unread_again(
+    runner: CliRunner, vault: Path, frozen_now: datetime
+) -> None:
     write(vault, STANDUP, note_text(schedule=EVERY_3_DAYS, title=STANDUP_TITLE))
     tick(runner, ANCHOR)
     conn = sqlite3.connect(vault / "index.sqlite")
@@ -192,7 +194,10 @@ def test_the_next_occurrence_makes_a_read_note_unread_again(runner: CliRunner, v
     tick(runner, "2026-09-05T10:00:00+03:00")
 
     unread = runner.invoke(cli, ["list", "--unread"])
-    assert unread.stdout == f"[unread] reminder active [{STANDUP}]({vault / STANDUP}) - {STANDUP_TITLE}\n"
+    assert unread.stdout == (
+        f"[unread] 2026-09-01 reminder active [{STANDUP}]({vault / STANDUP}) - {STANDUP_TITLE} "
+        "(every 3 days, next 2026-09-05 10:00)\n"
+    )
     assert delivery_rows(vault) == [
         (STANDUP, ANCHOR, ANCHOR, "2026-09-02T11:00:00+03:00"),
         (STANDUP, "2026-09-05T10:00:00+03:00", "2026-09-05T10:00:00+03:00", None),
@@ -281,7 +286,9 @@ def test_a_notification_failure_is_a_warning_and_leaves_the_delivery_unread(
     assert result.stderr == f"warning: {PLANTS}: notify-send failed: Failed to show notification: Could not connect\n"
     assert delivery_rows(vault) == [(PLANTS, SEPTEMBER_9, SEPTEMBER_9, None)]
     assert desktop_calls(desktop) == [(*NOTIFY, PLANTS_TITLE, PLANTS), SOUND]
-    assert unread.stdout == f"[unread] reminder active [{PLANTS}]({vault / PLANTS}) - {PLANTS_TITLE}\n"
+    assert unread.stdout == (
+        f"[unread] 2026-09-02 reminder active [{PLANTS}]({vault / PLANTS}) - {PLANTS_TITLE} (at 2026-09-09 10:00)\n"
+    )
     assert tick(runner, "2026-09-09T10:01:00+03:00").stdout == ""
 
 

@@ -26,7 +26,7 @@ from notes.cli.edit import as_data, fail_invalid, invalid_of, note_title, render
 from notes.document import ValidationError
 from notes.drafts import Draft
 from notes.errors import UsageError, ValidationFailed
-from notes.output import emit, json_enabled
+from notes.output import emit, json_enabled, render_ref
 from notes.prompts import require_kind
 from notes.slug import create_dated_note, dated_filename
 from notes.sync import InvalidFile, error_lines
@@ -239,7 +239,7 @@ def fail_draft(ctx: click.Context, vault: Path, draft: Draft, errors: list[Valid
 
 def render_draft(vault: Path, draft: Draft) -> str:
     """`[draft-id](abs draft.md) - short name`: the shape of a note link, pointing at the draft's Markdown."""
-    return f"[{draft.id}]({drafts.markdown_path(vault, draft.id)}) - {draft.short_name}"
+    return render_ref(drafts.markdown_path(vault, draft.id), draft.id, draft.short_name)
 
 
 def draft_as_data(vault: Path, draft: Draft) -> dict[str, Any]:

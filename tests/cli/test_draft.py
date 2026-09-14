@@ -7,6 +7,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import click
 import pytest
 from click.testing import CliRunner, Result
 
@@ -264,6 +265,21 @@ def test_list_prints_nothing_without_drafts(runner: CliRunner, vault: Path) -> N
     result = runner.invoke(cli, ["draft", "list", "--json"])
     assert result.exit_code == 0, result.output
     assert json.loads(result.stdout) == []
+
+
+def test_list_on_a_terminal_shows_the_short_name_first_hyperlinked_to_the_draft(
+    runner: CliRunner, vault: Path, draft: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("FORCE_COLOR", "1")
+
+    result = runner.invoke(cli, ["draft", "list"], color=True)
+
+    assert result.exit_code == 0, result.output
+    uri = (draft_dir(vault) / "draft.md").as_uri()
+    assert result.stdout == (
+        f"\x1b]8;;{uri}\x1b\\{click.style(SHORT_NAME, bold=True)}\x1b]8;;\x1b\\"
+        f"  \x1b]8;;{uri}\x1b\\{click.style(DRAFT_ID, fg='bright_black')}\x1b]8;;\x1b\\\n"
+    )
 
 
 def test_list_shows_every_draft_in_id_order(

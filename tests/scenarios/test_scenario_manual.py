@@ -90,7 +90,8 @@ def head(git_cmd: Git, repo: Path) -> str:
 
 def line(vault: Path, kind: str, effective_status: str, path: str, title: str, width: int = 0) -> str:
     """One `notes list` line as printed; `width` pads the kind column when the listing mixes kinds."""
-    return f"{kind.ljust(width)} {effective_status} [{path}]({vault / path}) - {title}"
+    date = path.split("/")[1][:10]
+    return f"{date} {kind.ljust(width)} {effective_status} [{path}]({vault / path}) - {title}"
 
 
 def test_work_manually_without_an_agent(runner: CliRunner, home: Path, git_cmd: Git, tmp_path: Path) -> None:

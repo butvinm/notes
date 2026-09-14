@@ -262,7 +262,7 @@ def test_a_cyrillic_title_makes_a_cyrillic_slug_that_search_finds_through_anothe
         f"- [issue: ATLAS-31, text] [{RUSSIAN}]({vault / RUSSIAN}) - {RUSSIAN_TITLE}",
     ]
     assert shown.stdout == RUSSIAN_TEXT
-    assert listed.stdout == f"fact active [{RUSSIAN}]({vault / RUSSIAN}) - {RUSSIAN_TITLE}\n"
+    assert listed.stdout == f"2026-09-02 fact active [{RUSSIAN}]({vault / RUSSIAN}) - {RUSSIAN_TITLE}\n"
 
 
 # The CLI surface

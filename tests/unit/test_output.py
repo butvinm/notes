@@ -87,6 +87,30 @@ def test_render_link_on_a_terminal_is_title_then_dim_id_hyperlinked_to_the_file(
     assert "/h/.notes/notes/2026-09-02-задачи.md" not in link
 
 
+def test_render_link_appends_the_detail_after_the_title(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("NO_COLOR", "1")
+    plain = output.render_link(Path("/h"), "notes/a.md", "T", "at 2026-09-09 10:00")
+    monkeypatch.delenv("NO_COLOR")
+    monkeypatch.setenv("FORCE_COLOR", "1")
+    coloured = output.render_link(Path("/h"), "notes/a.md", "T", "at 2026-09-09 10:00")
+
+    assert plain == "[notes/a.md](/h/notes/a.md) - T (at 2026-09-09 10:00)"
+    assert coloured == (
+        f"\x1b]8;;file:///h/notes/a.md\x1b\\{click.style('T', bold=True)}\x1b]8;;\x1b\\"
+        f" ({click.style('at 2026-09-09 10:00', fg='yellow')})"
+        f"  \x1b]8;;file:///h/notes/a.md\x1b\\{click.style('notes/a.md', fg='bright_black')}\x1b]8;;\x1b\\"
+    )
+
+
+def test_render_ref_takes_any_file_and_label(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A draft is referenced by its ID and its Markdown path, the same shape as a note."""
+    monkeypatch.setenv("NO_COLOR", "1")
+
+    ref = output.render_ref(Path("/h/.notes/drafts/20260902-120000-fact/draft.md"), "20260902-120000-fact", "porter")
+
+    assert ref == "[20260902-120000-fact](/h/.notes/drafts/20260902-120000-fact/draft.md) - porter"
+
+
 def test_hyperlink_wraps_the_text_in_osc_8() -> None:
     assert output.hyperlink("x", "file:///a") == "\x1b]8;;file:///a\x1b\\x\x1b]8;;\x1b\\"
 
